@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#13375e" />
+  <meta name="description" content="Answer ten questions and meet the shark that matches your personality." />
+  <title>What Shark Am I?</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/tokens.css" />
+  <link rel="stylesheet" href="css/bubble.css" />
+  <link rel="stylesheet" href="css/cursor.css" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/app.css" />
+  <script src="js/counter-config.js"></script>
+</head>
+<body>
+  <div class="ambient-bubbles" aria-hidden="true">
+    <img src="assets/bubble.png" alt="" />
+    <img src="assets/bubble.png" alt="" />
+    <img src="assets/bubble.png" alt="" />
+    <img src="assets/bubble.png" alt="" />
+    <img src="assets/bubble.png" alt="" />
+    <img src="assets/bubble.png" alt="" />
+    <img src="assets/bubble.png" alt="" />
+    <img src="assets/bubble.png" alt="" />
+    <img src="assets/bubble.png" alt="" />
+    <img src="assets/bubble.png" alt="" />
+    <img src="assets/bubble.png" alt="" />
+    <img src="assets/bubble.png" alt="" />
+  </div>
+  <div class="site-bubble" id="site-bubble"></div>
+  <nav class="nav" aria-label="Main navigation">
+    <a class="nav__link" href="#what" data-page="what">WHAT<span></span></a>
+    <a class="nav__link" href="#why" data-page="why">WHY<span></span></a>
+    <a class="nav__link" href="#who" data-page="who">WHO<span></span></a>
+    <a class="nav__link" href="#where" data-page="where">WHERE<span></span></a>
+  </nav>
+  <main id="app" class="stage" tabindex="-1"></main>
+  <dialog id="shark-dialog" class="shark-dialog" aria-labelledby="dialog-title"></dialog>
+  <div id="cursor-root"></div>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

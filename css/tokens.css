@@ -1,0 +1,66 @@
+/* Design tokens from the Figma file. */
+:root {
+  --plum: #825c6c;
+  --navy: #13375e;
+  --cream: #fff2f2;
+  --mint: #bdf0cf;
+  --pink: #f7c6dc;
+  --lavender: #cfc2f7;
+  --title-ink: #35395d;
+  --panel: rgba(255, 242, 242, 0.72);
+  --panel-solid: rgba(255, 242, 242, 0.8);
+  --live: #f2738c;
+  --map-sea: #4d789e;
+  --map-land: #f7edf2;
+  --font: "Pixelify Sans", system-ui, sans-serif;
+  --iris: linear-gradient(
+    180deg,
+    #cafcc3 14%,
+    #e5ebd5 26%,
+    #f8dee2 44%,
+    #ffdae6 53%,
+    #c2e1f4 66%,
+    #d0c3fb 86%
+  );
+  --iris-input: linear-gradient(
+    180deg,
+    #cafcc3 0%,
+    #e5ebd5 16%,
+    #f8dee2 33%,
+    #ffdae6 48%,
+    #c2e1f4 63%,
+    #d0c3fb 80%
+  );
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--font);
+  color: var(--plum);
+  background: #13375e url("../assets/bg-full.png") center / cover no-repeat fixed;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+}
+
+img {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+}
+
+button,
+input {
+  font-family: inherit;
+}
+
+button {
+  image-rendering: pixelated;
+}

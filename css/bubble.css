@@ -1,0 +1,170 @@
+/* ---------------------------------------------------------------------------
+ * Floating bubble
+ *
+ * Tune motion in js/config.js (particleCount, burstMs, reformDelayMs).
+ * Idle motion uses only transform. prefers-reduced-motion swaps to a fade.
+ * ------------------------------------------------------------------------- */
+
+.bubble {
+  position: relative;
+  width: var(--bubble-size, 69px);
+  height: calc(var(--bubble-size, 69px) * 73 / 69);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  z-index: 40;
+}
+
+.bubble:focus-visible {
+  outline: 3px solid var(--cream);
+  outline-offset: 4px;
+}
+
+.bubble[disabled] {
+  pointer-events: none;
+}
+
+.bubble__idle {
+  width: 100%;
+  height: 100%;
+  transform-origin: 50% 60%;
+  animation: bubble-idle 3.6s steps(8, end) infinite;
+}
+
+.bubble__art {
+  width: 100%;
+  height: 100%;
+  display: block;
+  image-rendering: pixelated;
+  pointer-events: none;
+  transition: transform 80ms steps(2, end);
+}
+
+.bubble:hover:not([disabled]) .bubble__art,
+.bubble:focus-visible:not([disabled]) .bubble__art {
+  transform: scale(1.12);
+}
+
+.bubble.is-bursting .bubble__idle {
+  animation: none;
+}
+
+.bubble.is-swelling .bubble__art {
+  transform: scale(1.28);
+}
+
+.bubble.is-popped .bubble__art {
+  opacity: 0;
+  transform: scale(0.2);
+}
+
+.bubble.is-reforming .bubble__art {
+  animation: bubble-reform var(--reform-ms, 280ms) steps(5, end) both;
+}
+
+.bubble__fx {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.bubble__particle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.bubble__ring {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  border: 3px solid #fff;
+  box-shadow:
+    6px 0 0 #f7c6dc,
+    -6px 0 0 #cfc2f7,
+    0 6px 0 #bdf0cf,
+    0 -6px 0 #c2e1f4;
+  opacity: 0;
+  pointer-events: none;
+}
+
+@keyframes bubble-idle {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  25% {
+    transform: translate3d(4px, -7px, 0) rotate(-4deg);
+  }
+  50% {
+    transform: translate3d(-2px, 2px, 0) rotate(3deg);
+  }
+  75% {
+    transform: translate3d(-5px, -5px, 0) rotate(-2deg);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+}
+
+@keyframes bubble-reform {
+  0% {
+    opacity: 0;
+    transform: scale(0.15);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1.12);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.site-bubble {
+  position: fixed;
+  top: 22px;
+  left: 28px;
+  z-index: 50;
+}
+
+@media (max-width: 720px) {
+  .site-bubble {
+    top: 10px;
+    left: 10px;
+    --bubble-size: 48px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bubble__idle {
+    animation: bubble-fade 2.4s steps(2, end) infinite;
+  }
+
+  @keyframes bubble-fade {
+    0%,
+    100% {
+      opacity: 1;
+      transform: none;
+    }
+    50% {
+      opacity: 0.72;
+      transform: none;
+    }
+  }
+
+  .bubble.is-reforming .bubble__art {
+    animation: none;
+    opacity: 1;
+  }
+}

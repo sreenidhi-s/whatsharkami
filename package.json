@@ -1,0 +1,11 @@
+{
+  "name": "whatsharkami",
+  "type": "module",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Pixel-art shark personality quiz from the Figma design",
+  "scripts": {
+    "start": "npx --yes serve -l 5173",
+    "dev": "npx --yes serve -l 5173"
+  }
+}
