@@ -5,55 +5,455 @@ import { mountBubble } from './bubble.js';
 import { mountCursor } from './cursor.js';
 
 const app=document.querySelector('#app'), dialog=document.querySelector('#shark-dialog');
-const state={page:'home',index:0,answers:[],order:[],result:null,name:sessionStorage.getItem('sharkName')||'',completed:false,hover:null};
+const state={page:'home',index:0,answers:[],order:[],result:null,name:sessionStorage.getItem('sharkName')||'',completed:false,completionId:null,hover:null};
+
 mountBubble(document.querySelector('#site-bubble'),{size:69,src:'assets/bubble.png',muted:true,ariaLabel:'Go to home page',onBurst:()=>setPage('home')});
 mountCursor();
+
 const escape=(s='')=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
 function setPage(page){state.page=page; history.replaceState(null,'',`#${page}`); render();}
 function frame(inner,cls=''){return `<section class="panel ${cls}"><div class="panel__inner">${inner}</div></section>`;}
-function nav(){document.querySelectorAll('.nav__link').forEach(a=>{a.classList.toggle('is-active',a.dataset.page===state.page);if(a.dataset.page===state.page)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});}
-function render(){nav(); if(['what','why','who','where'].includes(state.page)) return renderInfo(state.page);if(state.page==='result')return renderResult();if(state.page==='quiz')return renderQuiz();return renderHome();}
-function renderHome(){app.innerHTML=frame(`<h1 class="home-title">SHARK.ORG</h1><p class="home-lead">answer some questions and find a shark that matches you!</p><div class="home-row"><form class="home-copy" id="start-form"><label class="home-prompt" for="start-name">enter your name to get started!</label><div class="name-form"><input id="start-name" maxlength="24" autocomplete="given-name" placeholder="your name" value="${escape(state.name)}"/></div></form><img class="mascot" src="assets/mascot.png" alt="Pixel shark mascot"/></div>`);
- const input=app.querySelector('#start-name');input.addEventListener('input',()=>{state.name=input.value.slice(0,24);sessionStorage.setItem('sharkName',state.name);});app.querySelector('#start-form').addEventListener('submit',e=>{e.preventDefault();state.name=input.value.trim().slice(0,24);sessionStorage.setItem('sharkName',state.name);state.index=0;state.answers=[];state.order=[];setPage('quiz');});}
-function shuffle(){const values=[0,1,2,3];for(let i=values.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[values[i],values[j]]=[values[j],values[i]];}return values;}
+
+function nav(){
+ document.querySelectorAll('.nav__link').forEach(a=>{
+  a.classList.toggle('is-active',a.dataset.page===state.page);
+  if(a.dataset.page===state.page)a.setAttribute('aria-current','page');
+  else a.removeAttribute('aria-current');
+ });
+}
+
+function render(){
+ nav();
+ if(['what','why','who','where'].includes(state.page)) return renderInfo(state.page);
+ if(state.page==='result')return renderResult();
+ if(state.page==='quiz')return renderQuiz();
+ return renderHome();
+}
+
+function renderHome(){
+ app.innerHTML=frame(`<h1 class="home-title">SHARK.ORG</h1><p class="home-lead">answer some questions and find a shark that matches you!</p><div class="home-row"><form class="home-copy" id="start-form"><label class="home-prompt" for="start-name">enter your name to get started!</label><div class="name-form"><input id="start-name" maxlength="24" autocomplete="given-name" placeholder="your name" value="${escape(state.name)}"/></div></form><img class="mascot" src="assets/mascot.png" alt="Pixel shark mascot"/></div>`);
+
+ const input=app.querySelector('#start-name');
+
+ input.addEventListener('input',()=>{
+  state.name=input.value.slice(0,24);
+  sessionStorage.setItem('sharkName',state.name);
+ });
+
+ app.querySelector('#start-form').addEventListener('submit',e=>{
+  e.preventDefault();
+  state.name=input.value.trim().slice(0,24);
+  sessionStorage.setItem('sharkName',state.name);
+  state.index=0;
+  state.answers=[];
+  state.order=[];
+  state.completed=false;
+  state.completionId=newQuizId();
+  setPage('quiz');
+ });
+}
+
+function shuffle(){
+ const values=[0,1,2,3];
+ for(let i=values.length-1;i>0;i--){
+  const j=Math.floor(Math.random()*(i+1));
+  [values[i],values[j]]=[values[j],values[i]];
+ }
+ return values;
+}
+
 function renderQuiz(){
- const q=QUESTIONS[state.index]; if(!q){state.result=scoreAnswers(state.answers);state.page='result';countCompletion();return renderResult();}
+ const q=QUESTIONS[state.index];
+
+ if(!q){
+  state.result=scoreAnswers(state.answers);
+  state.page='result';
+  countCompletion();
+  return renderResult();
+ }
+
  if(!state.order.length)state.order=shuffle();
+
  app.innerHTML=frame(`<h1 class="quiz-head">MAKE YOUR CHOICES</h1><div class="progress"><span>QUESTION ${state.index+1} OF 10</span><div class="segments" role="progressbar" aria-valuemin="0" aria-valuemax="10" aria-valuenow="${state.index+1}" aria-label="Question ${state.index+1} of 10">${QUESTIONS.map((_,i)=>`<i class="${i<=state.index?'is-on':''}"></i>`).join('')}</div></div><h2 class="question" id="question-text">${escape(q.text)}</h2><div class="answers" role="group" aria-labelledby="question-text">${state.order.map((n,i)=>`<button class="answer" data-answer="${n}"><b>${'ABCD'[i]}</b><span>${escape(q.answers[n].text)}</span></button>`).join('')}</div><div class="quiz-controls"><button class="text-button" data-action="back">← BACK</button><button class="text-button" data-action="restart">START OVER</button></div>`,'panel--quiz');
- app.querySelectorAll('[data-answer]').forEach(b=>b.onclick=()=>{state.answers[state.index]=Number(b.dataset.answer);state.index++;state.order=[];render();});
- const back=app.querySelector('[data-action="back"]');if(back)back.onclick=()=>{if(state.index){state.index--;state.order=[];render();}else setPage('home');};
+
+ app.querySelectorAll('[data-answer]').forEach(b=>b.onclick=()=>{
+  state.answers[state.index]=Number(b.dataset.answer);
+  state.index++;
+  state.order=[];
+  render();
+ });
+
+ const back=app.querySelector('[data-action="back"]');
+ if(back)back.onclick=()=>{
+  if(state.index){
+   state.index--;
+   state.order=[];
+   render();
+  }else setPage('home');
+ };
+
  app.querySelector('[data-action="restart"]').onclick=()=>restart();
 }
-function restart(){state.index=0;state.answers=[];state.order=[];state.result=null;state.page='quiz';state.completed=false;render();}
-async function counterRpc(name,params={}){const cfg=window.SHARK_COUNTER;if(!cfg?.url||!cfg?.anonKey)return null;const response=await fetch(`${cfg.url}/rest/v1/rpc/${name}`,{method:'POST',headers:{apikey:cfg.anonKey,Authorization:`Bearer ${cfg.anonKey}`,'Content-Type':'application/json'},body:JSON.stringify(params)});if(!response.ok)throw new Error('Counter unavailable');const value=await response.json();return Number(value);}
-function counterSessionId(){let id=sessionStorage.getItem('counterSessionId');if(!id){id=crypto.randomUUID?.()||'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return (c==='x'?r:(r&0x3|0x8)).toString(16);});sessionStorage.setItem('counterSessionId',id);}return id;}
-async function countCompletion(){if(sessionStorage.getItem('quizCompleted'))return;sessionStorage.setItem('quizCompleted','1');state.completed=true;
- try{const count=await counterRpc('complete_quiz',{p_session_id:counterSessionId()});if(Number.isFinite(count)){localStorage.setItem('sharksMatched',String(count));return;}}catch{}
- const n=Number(localStorage.getItem('sharksMatched')||12847)+1;localStorage.setItem('sharksMatched',String(n));
+
+function restart(){
+ state.index=0;
+ state.answers=[];
+ state.order=[];
+ state.result=null;
+ state.completed=false;
+ state.completionId=newQuizId();
+ state.page='quiz';
+ render();
 }
-function renderResult(){const primary=SHARKS[state.result?.primary||'thresher'],secondary=SHARKS[state.result?.secondary||'hammerhead'];
+
+async function counterRpc(name,params={}){
+ const cfg=window.SHARK_COUNTER;
+ if(!cfg?.url||!cfg?.anonKey)return null;
+
+ const response=await fetch(`${cfg.url}/rest/v1/rpc/${name}`,{
+  method:'POST',
+  headers:{
+   apikey:cfg.anonKey,
+   Authorization:`Bearer ${cfg.anonKey}`,
+   'Content-Type':'application/json'
+  },
+  body:JSON.stringify(params)
+ });
+
+ if(!response.ok)throw new Error('Counter unavailable');
+
+ const value=await response.json();
+ return Number(value);
+}
+
+function newQuizId(){
+ return crypto.randomUUID?.()||
+ 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{
+  const r=Math.random()*16|0;
+  return (c==='x'?r:(r&0x3|0x8)).toString(16);
+ });
+}
+
+
+async function countCompletion(){
+ console.log('[COUNTER] Function called');
+ console.log('[COUNTER] Current state:', {
+  completed: state.completed,
+  page: state.page,
+  index: state.index,
+  completionId: state.completionId
+ });
+
+ if(state.completed){
+  console.log('[COUNTER] Already completed. Skipping.');
+  return;
+ }
+
+ state.completed=true;
+
+ const id=state.completionId||newQuizId();
+ state.completionId=id;
+
+ console.log('[COUNTER] Sending request:', id);
+ console.log('[COUNTER] Config:', window.SHARK_COUNTER);
+
+ try{
+  const count=await counterRpc('complete_quiz',{
+   p_session_id:id
+  });
+
+  console.log('[COUNTER] Supabase response:', count);
+
+  if(Number.isFinite(count)){
+   localStorage.setItem('sharksMatched',String(count));
+  }
+ }catch(error){
+  console.error('[COUNTER] Request failed:',error);
+ }
+}
+
+
+function renderResult(){
+ const primary=SHARKS[state.result?.primary||'thresher'];
+ const secondary=SHARKS[state.result?.secondary||'hammerhead'];
+
  app.innerHTML=frame(`<h1 class="page-title">YOUR SHARK IS...</h1><div class="accent" aria-hidden="true"><i></i><i></i><i></i></div><p class="page-body result-subtitle">You’re a <strong>${escape(primary.name.replace(' Shark',''))}</strong> with <strong>${escape(secondary.name.replace(' Shark',''))}</strong> energy!</p><div class="result-layout"><div class="result-preview" style="--shark-color:${ZONES[primary.id].color}"><img src="${primary.image}" alt="Illustration of a ${primary.name}"/><span>YOUR SHARK</span><b>${escape(primary.title)}</b><small>SECONDARY SHARK · ${escape(secondary.name)}</small></div><div class="name-panel"><label for="visitor-name">WHAT SHOULD YOUR SHARK ID SAY?</label><input id="visitor-name" maxlength="24" autocomplete="given-name" placeholder="Your name" value="${escape(state.name)}"/><button class="pixel-button" data-action="make-card">MAKE MY SHARK ID</button><p class="secondary-line">Secondary shark: <b>${escape(secondary.title)}</b></p><button class="text-button" data-action="retake">↻ TAKE THE QUIZ AGAIN</button></div></div>`,'panel--result');
- app.querySelector('#visitor-name').oninput=e=>{state.name=e.target.value.slice(0,24);sessionStorage.setItem('sharkName',state.name);};
- app.querySelector('[data-action="make-card"]').onclick=()=>{state.name=app.querySelector('#visitor-name').value.trim().slice(0,24)||'SHARK FAN';sessionStorage.setItem('sharkName',state.name);renderCard();};
+
+ app.querySelector('#visitor-name').oninput=e=>{
+  state.name=e.target.value.slice(0,24);
+  sessionStorage.setItem('sharkName',state.name);
+ };
+
+ app.querySelector('[data-action="make-card"]').onclick=()=>{
+  state.name=app.querySelector('#visitor-name').value.trim().slice(0,24)||'SHARK FAN';
+  sessionStorage.setItem('sharkName',state.name);
+  renderCard();
+ };
+
  app.querySelector('[data-action="retake"]').onclick=restart;
 }
-function renderCard(){const s=SHARKS[state.result.primary];app.innerHTML=frame(`<article class="id-card" id="id-card"><div class="id-stars" aria-hidden="true">${Array.from({length:52},(_,i)=>{let css;if(i<14)css=`top:0;left:${i*7.2}%`;else if(i<28)css=`bottom:0;left:${(i-14)*7.2}%`;else if(i<40)css=`left:0;top:${(i-28)*8}%`;else css=`right:0;top:${(i-40)*8}%`;return `<i style="${css}"></i>`}).join('')}</div><h1 class="id-title">SHARK ID</h1><div class="id-grid"><div class="id-photo"><img src="${s.image}" alt="${escape(s.name)}"/></div><div class="id-fields"><div><div class="field-label">NAME</div><div class="field-box">${escape(state.name)}</div></div><div><div class="field-label">YOUR SHARK</div><div class="field-box">${escape(s.title)}</div></div><div><div class="field-label">PERSONALITY TRAITS</div><div class="traits">${s.traits.map(t=>`<span class="trait">${escape(t)}</span>`).join('')}</div></div></div><div class="about"><div class="field-label">ABOUT THE SHARK</div><div class="about-box">${escape(s.about)}</div></div></div></article><div class="card-actions"><button class="pixel-button" data-action="download">⬇ DOWNLOAD PNG</button><button class="pixel-button" data-action="share">↗ SHARE</button><button class="text-button" data-action="back-result">← BACK TO RESULTS</button></div>`,'panel--id');
- app.querySelector('[data-action="download"]').onclick=downloadCard;app.querySelector('[data-action="share"]').onclick=shareCard;app.querySelector('[data-action="back-result"]').onclick=renderResult;
+
+function renderCard(){
+ const s=SHARKS[state.result.primary];
+
+ app.innerHTML=frame(`<article class="id-card" id="id-card"><div class="id-stars" aria-hidden="true">${['top','bottom'].map(p=>`<div class="id-stars__row id-stars__row--${p}">${'<i></i>'.repeat(14)}</div>`).join('')}${['left','right'].map(p=>`<div class="id-stars__col id-stars__col--${p}">${'<i></i>'.repeat(9)}</div>`).join('')}</div><h1 class="id-title">SHARK ID</h1><div class="id-grid"><div class="id-photo"><img src="${s.image}" alt="${escape(s.name)}"/></div><div class="id-fields"><div><div class="field-label">NAME</div><div class="field-box">${escape(state.name)}</div></div><div><div class="field-label">YOUR SHARK</div><div class="field-box">${escape(s.title)}</div></div><div><div class="field-label">PERSONALITY TRAITS</div><div class="traits">${s.traits.map(t=>`<span class="trait">${escape(t)}</span>`).join('')}</div></div></div><div class="about"><div class="field-label">ABOUT THE SHARK</div><div class="about-box">${escape(s.about)}</div></div></div></article><div class="card-actions"><button class="pixel-button" data-action="download">⬇ DOWNLOAD PNG</button><button class="pixel-button" data-action="share">↗ SHARE</button><button class="text-button" data-action="back-result">← BACK TO RESULTS</button></div>`,'panel--id');
+
+ app.querySelector('[data-action="download"]').onclick=downloadCard;
+ app.querySelector('[data-action="share"]').onclick=shareCard;
+ app.querySelector('[data-action="back-result"]').onclick=renderResult;
 }
-async function downloadCard(){await document.fonts.ready;const canvas=document.createElement('canvas');canvas.width=900;canvas.height=720;const ctx=canvas.getContext('2d');ctx.imageSmoothingEnabled=false;ctx.fillStyle='#13375e';ctx.fillRect(0,0,900,720);ctx.fillStyle='#fff2f2';ctx.fillRect(22,22,856,676);ctx.strokeStyle='#13375e';ctx.lineWidth=12;ctx.strokeRect(42,42,816,636);for(let x=60;x<850;x+=58){drawStar(ctx,x,57,10);drawStar(ctx,x,662,10);}for(let y=105;y<660;y+=55){drawStar(ctx,57,y,10);drawStar(ctx,843,y,10);}ctx.fillStyle='#13375e';ctx.font='42px Pixelify Sans';ctx.fillText('SHARK ID',575,100);const s=SHARKS[state.result.primary];try{const img=new Image();img.src=s.image;await img.decode();ctx.fillStyle='#fff2f2';ctx.fillRect(75,125,310,330);ctx.strokeStyle='#13375e';ctx.lineWidth=10;ctx.strokeRect(75,125,310,330);ctx.drawImage(img,95,145,270,290);}catch{}ctx.fillStyle='#13375e';ctx.font='22px Pixelify Sans';ctx.fillText('NAME',430,175);drawField(ctx,430,185,390,48);ctx.font='20px Pixelify Sans';ctx.fillText(state.name,445,216);ctx.font='22px Pixelify Sans';ctx.fillText('YOUR SHARK',430,260);drawField(ctx,430,270,390,48);ctx.font='18px Pixelify Sans';ctx.fillText(s.title,445,301);ctx.font='22px Pixelify Sans';ctx.fillText('PERSONALITY TRAITS',430,360);s.traits.forEach((t,i)=>{ctx.fillStyle=['#bdf0cf','#f7c6dc','#cfc2f7'][i];ctx.fillRect(430+i*130,374,120,50);ctx.strokeStyle='#13375e';ctx.lineWidth=3;ctx.strokeRect(430+i*130,374,120,50);ctx.fillStyle='#13375e';ctx.font='17px Pixelify Sans';ctx.fillText(t,438+i*130,405);});ctx.fillStyle='#13375e';ctx.font='22px Pixelify Sans';ctx.fillText('ABOUT THE SHARK',75,500);drawField(ctx,75,512,745,112);ctx.font='17px Pixelify Sans';wrapText(ctx,s.about,90,544,715,23);canvas.toBlob(blob=>{if(!blob)return;const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='my-shark-id.png';a.click();window.setTimeout(()=>URL.revokeObjectURL(a.href),1500);});}
-function drawField(ctx,x,y,width,height){ctx.fillStyle='#fff2f2';ctx.fillRect(x,y,width,height);ctx.strokeStyle='#13375e';ctx.lineWidth=3;ctx.strokeRect(x,y,width,height);}
-function drawStar(ctx,x,y,r){ctx.save();ctx.translate(x,y);ctx.beginPath();ctx.fillStyle='#13375e';for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,rad=i%2?r*.45:r;ctx.lineTo(Math.cos(a)*rad,Math.sin(a)*rad);}ctx.closePath();ctx.fill();ctx.restore();}
-function wrapText(ctx,text,x,y,maxWidth,lineHeight){let line='';for(const word of text.split(' ')){const test=line+word+' ';if(ctx.measureText(test).width>maxWidth&&line){ctx.fillText(line,x,y);line=word+' ';y+=lineHeight;}else line=test;}ctx.fillText(line,x,y);}
-async function shareCard(){const data={title:'My Shark ID',text:`I’m ${SHARKS[state.result.primary].title}! Find your shark:`,url:location.href.split('#')[0]};if(navigator.share){try{await navigator.share(data);return;}catch{}}try{await navigator.clipboard.writeText(data.url);alert('Quiz link copied!');}catch{prompt('Copy this quiz link:',data.url);}}
-function renderInfo(page){if(page==='what')return renderWhat();if(page==='why')return renderWhy();if(page==='who')return renderWho();renderWhere();}
-function renderWhat(){const count=Number(localStorage.getItem('sharksMatched')||12847);app.innerHTML=frame(`<h1 class="page-title">WHAT IS THIS?</h1><div class="accent" aria-hidden="true"><i></i><i></i><i></i></div><p class="page-body">This is a website where you answer some questions, and get a shark that matches your personality!<br/>You get a personalized shark ID that you can download and share with your friends :D</p><div class="steps"><div class="step"><div class="step__num">1</div><h3>ANSWER</h3><p>10 quick, fun questions</p></div><div class="step"><div class="step__num">2</div><h3>MEET</h3><p>the shark that is you</p></div><div class="step"><div class="step__num">3</div><h3>SHARE</h3><p>download your Shark ID</p></div></div><div class="counter"><div class="live"><i></i> LIVE</div><div class="counter__label">SHARKS MATCHED SO FAR</div><div class="digits" aria-live="polite">${String(count).replace(/\B(?=(\d{3})+(?!\d))/g,',').split('').map(d=>d===','?'<span>,</span>':`<b>${d}</b>`).join('')}</div></div>`);refreshCounter();}
-async function refreshCounter(){const digits=app.querySelector('.digits');if(!digits)return;let count=Number(localStorage.getItem('sharksMatched')||12847);try{const remote=await counterRpc('get_count');if(Number.isFinite(remote)){count=remote;localStorage.setItem('sharksMatched',String(count));}}catch{}if(!digits.isConnected)return;const next=String(count).replace(/\B(?=(\d{3})+(?!\d))/g,',');if(digits.textContent!==next)digits.innerHTML=next.split('').map(d=>d===','?'<span>,</span>':`<b>${d}</b>`).join('');}
-window.setInterval(()=>{if(state.page==='what'&&!document.hidden)refreshCounter();},60000);
-function renderWhy(){app.innerHTML=frame(`<h1 class="page-title">WHY IS THIS?</h1><div class="accent" aria-hidden="true"><i></i><i></i><i></i></div><div class="stats"><article class="stat"><span class="pill pill--pink">SHARKS KILLED</span><div class="stat__num">70 MILLION</div><p>by people each year (estimated)</p></article><div class="vs">VS</div><article class="stat"><span class="pill pill--mint">HUMANS ATTACKED</span><div class="stat__num">80</div><p>by sharks each year</p></article></div><div class="banners"><div class="banner banner--ladder">a ladder is more likely to kill you than a shark is.</div><div class="banner banner--dino">sharks have been here even before the dinosaurs, keeping the ecosystem in check.</div></div>`);}
-function renderWho(){app.innerHTML=frame(`<h1 class="page-title">WHO IS THIS?</h1><div class="accent" aria-hidden="true"><i></i><i></i><i></i></div><p class="subtitle">a catalogue for sharks. 14 of them, and one of them is you.</p><div class="catalogue">${CATALOGUE_ORDER.map(id=>{const s=SHARKS[id];return `<button class="tile ${state.result?.primary===id?'is-yours':''}" data-shark="${id}" aria-label="Learn about ${escape(s.name)}" style="--shark-color:${ZONES[id].color}"><span class="tile__art"><img src="${s.image}" alt=""/></span><span>${escape(s.name.replace(' Shark','').toUpperCase())}</span>${state.result?.primary===id?'<small>YOUR SHARK</small>':''}</button>`}).join('')}</div>`);app.querySelectorAll('[data-shark]').forEach(b=>b.onclick=()=>openShark(b.dataset.shark));}
-function openShark(id){const s=SHARKS[id];dialog.innerHTML=`<button class="dialog-close" aria-label="Close">×</button><img class="dialog-art" src="${s.image}" alt="${escape(s.name)}"/><h2 id="dialog-title">${escape(s.name)}</h2><h3>${escape(s.nickname)}</h3><div class="traits">${s.traits.map(t=>`<span class="trait">${escape(t)}</span>`).join('')}</div><p>${escape(s.about)}</p><p><b>FOUND IN</b><br/>${escape(s.found)}</p>`;dialog.showModal();dialog.querySelector('.dialog-close').onclick=()=>dialog.close();}
-function renderWhere(){app.innerHTML=frame(`<h1 class="page-title">WHERE ARE THEY?</h1><p class="subtitle">hover over a glowing spot to meet the sharks that live there</p><div class="map-scroll"><div class="map-wrap" role="group" aria-label="Map showing where the 14 shark species are found"><img src="assets/map-land.svg" alt="Pixel map of the world"/>${CATALOGUE_ORDER.map(id=>{const s=SHARKS[id],z=ZONES[id];return `<button class="map-hotspot" data-shark="${id}" aria-label="${escape(s.name)}. ${escape(s.found)}" style="left:${z.x}%;top:${z.y}%;--spot:${z.color};--diameter:${z.radius*2}%"></button>`}).join('')}<aside class="map-card" aria-live="polite"></aside></div></div>`);const wrap=app.querySelector('.map-wrap'),card=app.querySelector('.map-card');const show=id=>{const s=SHARKS[id];card.style.setProperty('--spot',ZONES[id].color);card.innerHTML=`<img src="${s.image}" alt="Pixel art ${escape(s.name)}"/><div><h3>${escape(s.name)}</h3><p class="nick">${escape(s.nickname)}</p><p>${escape(s.found)}</p></div>`;wrap.classList.add('is-hovering');};app.querySelectorAll('[data-shark]').forEach(b=>{b.onpointerenter=()=>show(b.dataset.shark);b.onfocus=()=>show(b.dataset.shark);b.onclick=()=>show(b.dataset.shark);});wrap.onpointerleave=()=>wrap.classList.remove('is-hovering');}
-document.querySelectorAll('.nav__link').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();setPage(a.dataset.page);}));
-window.addEventListener('hashchange',()=>{const p=location.hash.slice(1);if(['what','why','who','where','quiz','home'].includes(p))setPage(p);});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&dialog.open)dialog.close();if(e.altKey&&e.key==='ArrowLeft'&&state.index>0){state.index--;state.order=[];renderQuiz();}});
-const hash=location.hash.slice(1);if(['what','why','who','where'].includes(hash))state.page=hash;render();
+
+async function downloadCard(){
+ await document.fonts.ready;
+ const canvas=document.createElement('canvas');
+ canvas.width=900;
+ canvas.height=720;
+ const ctx=canvas.getContext('2d');
+ ctx.imageSmoothingEnabled=false;
+ ctx.fillStyle='#13375e';
+ ctx.fillRect(0,0,900,720);
+ ctx.fillStyle='#fff2f2';
+ ctx.fillRect(22,22,856,676);
+ ctx.strokeStyle='#13375e';
+ ctx.lineWidth=12;
+ ctx.strokeRect(42,42,816,636);
+
+ for(let x=60;x<850;x+=58){
+  drawStar(ctx,x,57,10);
+  drawStar(ctx,x,662,10);
+ }
+
+ for(let y=105;y<660;y+=55){
+  drawStar(ctx,57,y,10);
+  drawStar(ctx,843,y,10);
+ }
+
+ ctx.fillStyle='#13375e';
+ ctx.font='42px Pixelify Sans';
+ ctx.fillText('SHARK ID',575,100);
+
+ const s=SHARKS[state.result.primary];
+
+ try{
+  const img=new Image();
+  img.src=s.image;
+  await img.decode();
+  ctx.fillStyle='#fff2f2';
+  ctx.fillRect(75,125,310,330);
+  ctx.strokeStyle='#13375e';
+  ctx.lineWidth=10;
+  ctx.strokeRect(75,125,310,330);
+  ctx.drawImage(img,95,145,270,290);
+ }catch{}
+
+ ctx.fillStyle='#13375e';
+ ctx.font='22px Pixelify Sans';
+ ctx.fillText('NAME',430,175);
+ drawField(ctx,430,185,390,48);
+ ctx.font='20px Pixelify Sans';
+ ctx.fillText(state.name,445,216);
+ ctx.font='22px Pixelify Sans';
+ ctx.fillText('YOUR SHARK',430,260);
+ drawField(ctx,430,270,390,48);
+ ctx.font='18px Pixelify Sans';
+ ctx.fillText(s.title,445,301);
+ ctx.font='22px Pixelify Sans';
+ ctx.fillText('PERSONALITY TRAITS',430,360);
+
+ s.traits.forEach((t,i)=>{
+  ctx.fillStyle=['#bdf0cf','#f7c6dc','#cfc2f7'][i];
+  ctx.fillRect(430+i*130,374,120,50);
+  ctx.strokeStyle='#13375e';
+  ctx.lineWidth=3;
+  ctx.strokeRect(430+i*130,374,120,50);
+  ctx.fillStyle='#13375e';
+  ctx.font='17px Pixelify Sans';
+  ctx.fillText(t,438+i*130,405);
+ });
+
+ ctx.fillStyle='#13375e';
+ ctx.font='22px Pixelify Sans';
+ ctx.fillText('ABOUT THE SHARK',75,500);
+ drawField(ctx,75,512,745,112);
+ ctx.font='17px Pixelify Sans';
+ wrapText(ctx,s.about,90,544,715,23);
+
+ canvas.toBlob(blob=>{
+  if(!blob)return;
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='my-shark-id.png';
+  a.click();
+  window.setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+ });
+}
+
+function drawField(ctx,x,y,width,height){
+ ctx.fillStyle='#fff2f2';
+ ctx.fillRect(x,y,width,height);
+ ctx.strokeStyle='#13375e';
+ ctx.lineWidth=3;
+ ctx.strokeRect(x,y,width,height);
+}
+
+function drawStar(ctx,x,y,r){
+ ctx.save();
+ ctx.translate(x,y);
+ ctx.beginPath();
+ ctx.fillStyle='#13375e';
+ for(let i=0;i<10;i++){
+  const a=-Math.PI/2+i*Math.PI/5;
+  const rad=i%2?r*.45:r;
+  ctx.lineTo(Math.cos(a)*rad,Math.sin(a)*rad);
+ }
+ ctx.closePath();
+ ctx.fill();
+ ctx.restore();
+}
+
+function wrapText(ctx,text,x,y,maxWidth,lineHeight){
+ let line='';
+ for(const word of text.split(' ')){
+  const test=line+word+' ';
+  if(ctx.measureText(test).width>maxWidth&&line){
+   ctx.fillText(line,x,y);
+   line=word+' ';
+   y+=lineHeight;
+  }else line=test;
+ }
+ ctx.fillText(line,x,y);
+}
+
+async function shareCard(){
+ const data={
+  title:'My Shark ID',
+  text:`I’m ${SHARKS[state.result.primary].title}! Find your shark:`,
+  url:location.href.split('#')[0]
+ };
+
+ if(navigator.share){
+  try{
+   await navigator.share(data);
+   return;
+  }catch{}
+ }
+
+ try{
+  await navigator.clipboard.writeText(data.url);
+  alert('Quiz link copied!');
+ }catch{
+  prompt('Copy this quiz link:',data.url);
+ }
+}
+
+function renderInfo(page){
+ if(page==='what')return renderWhat();
+ if(page==='why')return renderWhy();
+ if(page==='who')return renderWho();
+ renderWhere();
+}
+
+function renderWhat(){
+ const count=Number(localStorage.getItem('sharksMatched')||0);
+
+ app.innerHTML=frame(`<h1 class="page-title">WHAT IS THIS?</h1><div class="accent" aria-hidden="true"><i></i><i></i><i></i></div><p class="page-body">This is a website where you answer some questions, and get a shark that matches your personality!<br/>You get a personalized shark ID that you can download and share with your friends :D</p><div class="steps"><div class="step"><div class="step__num">1</div><h3>ANSWER</h3><p>10 quick, fun questions</p></div><div class="step"><div class="step__num">2</div><h3>MEET</h3><p>the shark that is you</p></div><div class="step"><div class="step__num">3</div><h3>SHARE</h3><p>download your Shark ID</p></div></div><div class="counter"><div class="live"><i></i> LIVE</div><div class="counter__label">SHARKS MATCHED SO FAR</div><div class="digits" aria-live="polite">${String(count).replace(/\B(?=(\d{3})+(?!\d))/g,',').split('').map(d=>d===','?'<span>,</span>':`<b>${d}</b>`).join('')}</div></div>`);
+
+ refreshCounter();
+}
+
+async function refreshCounter(){
+ const digits=app.querySelector('.digits');
+ if(!digits)return;
+
+ let count=Number(localStorage.getItem('sharksMatched')||0);
+
+ try{
+  const remote=await counterRpc('get_count');
+  if(Number.isFinite(remote)){
+   count=remote;
+   localStorage.setItem('sharksMatched',String(count));
+  }
+ }catch{}
+
+ if(!digits.isConnected)return;
+
+ const next=String(count).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+ if(digits.textContent!==next){
+  digits.innerHTML=next.split('').map(d=>d===','?'<span>,</span>':`<b>${d}</b>`).join('');
+ }
+}
+
+window.setInterval(()=>{
+ if(state.page==='what'&&!document.hidden)refreshCounter();
+},60000);
+
+function renderWhy(){
+ app.innerHTML=frame(`<h1 class="page-title">WHY IS THIS?</h1><div class="accent" aria-hidden="true"><i></i><i></i><i></i></div><div class="stats"><article class="stat"><span class="pill pill--pink">SHARKS KILLED</span><div class="stat__num">70 MILLION</div><p>by people each year (estimated)</p></article><div class="vs">VS</div><article class="stat"><span class="pill pill--mint">HUMANS ATTACKED</span><div class="stat__num">80</div><p>by sharks each year</p></article></div><div class="banners"><div class="banner banner--ladder">a ladder is more likely to kill you than a shark is.</div><div class="banner banner--dino">sharks have been here even before the dinosaurs, keeping the ecosystem in check.</div></div>`);
+}
+
+function renderWho(){
+ app.innerHTML=frame(`<h1 class="page-title">WHO IS THIS?</h1><div class="accent" aria-hidden="true"><i></i><i></i><i></i></div><p class="subtitle">a catalogue for sharks. 14 of them, and one of them is you.</p><div class="catalogue">${CATALOGUE_ORDER.map(id=>{
+  const s=SHARKS[id];
+  return `<button class="tile ${state.result?.primary===id?'is-yours':''}" data-shark="${id}" aria-label="Learn about ${escape(s.name)}" style="--shark-color:${ZONES[id].color}"><span class="tile__art"><img src="${s.image}" alt=""/></span><span>${escape(s.name.replace(' Shark','').toUpperCase())}</span>${state.result?.primary===id?'<small>YOUR SHARK</small>':''}</button>`
+ }).join('')}</div>`);
+
+ app.querySelectorAll('[data-shark]').forEach(b=>b.onclick=()=>openShark(b.dataset.shark));
+}
+
+function openShark(id){
+ const s=SHARKS[id];
+
+ dialog.innerHTML=`<button class="dialog-close" aria-label="Close">×</button><img class="dialog-art" src="${s.image}" alt="${escape(s.name)}"/><h2 id="dialog-title">${escape(s.name)}</h2><h3>${escape(s.nickname)}</h3><div class="traits">${s.traits.map(t=>`<span class="trait">${escape(t)}</span>`).join('')}</div><p>${escape(s.about)}</p><p><b>FOUND IN</b><br/>${escape(s.found)}</p>`;
+
+ dialog.showModal();
+ dialog.querySelector('.dialog-close').onclick=()=>dialog.close();
+}
+
+function renderWhere(){
+ app.innerHTML=frame(`<h1 class="page-title">WHERE ARE THEY?</h1><p class="subtitle">hover over a glowing spot to meet the sharks that live there</p><div class="map-scroll"><div class="map-wrap" role="group" aria-label="Map showing where the 14 shark species are found"><img src="assets/map-land.svg" alt="Pixel map of the world"/>${CATALOGUE_ORDER.map(id=>{
+  const s=SHARKS[id],z=ZONES[id];
+  return `<button class="map-hotspot" data-shark="${id}" aria-label="${escape(s.name)}. ${escape(s.found)}" style="left:${z.x}%;top:${z.y}%;--spot:${z.color};--diameter:${z.radius*2}%"></button>`
+ }).join('')}<aside class="map-card" aria-live="polite"></aside></div></div>`);
+
+ const wrap=app.querySelector('.map-wrap');
+ const card=app.querySelector('.map-card');
+
+ const show=id=>{
+  const s=SHARKS[id];
+  card.style.setProperty('--spot',ZONES[id].color);
+  card.innerHTML=`<img src="${s.image}" alt="Pixel art ${escape(s.name)}"/><div><h3>${escape(s.name)}</h3><p class="nick">${escape(s.nickname)}</p><p>${escape(s.found)}</p></div>`;
+  wrap.classList.add('is-hovering');
+ };
+
+ app.querySelectorAll('[data-shark]').forEach(b=>{
+  b.onpointerenter=()=>show(b.dataset.shark);
+  b.onfocus=()=>show(b.dataset.shark);
+  b.onclick=()=>show(b.dataset.shark);
+ });
+
+ wrap.onpointerleave=()=>wrap.classList.remove('is-hovering');
+}
+
+document.querySelectorAll('.nav__link').forEach(a=>a.addEventListener('click',e=>{
+ e.preventDefault();
+ setPage(a.dataset.page);
+}));
+
+window.addEventListener('hashchange',()=>{
+ const p=location.hash.slice(1);
+ if(['what','why','who','where','quiz','home'].includes(p))setPage(p);
+});
+
+document.addEventListener('keydown',e=>{
+ if(e.key==='Escape'&&dialog.open)dialog.close();
+ if(e.altKey&&e.key==='ArrowLeft'&&state.index>0){
+  state.index--;
+  state.order=[];
+  renderQuiz();
+ }
+});
+
+const hash=location.hash.slice(1);
+if(['what','why','who','where'].includes(hash))state.page=hash;
+render();

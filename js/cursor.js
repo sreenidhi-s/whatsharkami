@@ -39,6 +39,10 @@ export function mountCursor() {
   const root = document.createElement('div');
   root.className = 'px-cursor';
   root.setAttribute('aria-hidden', 'true');
+  // Top-layer element: modal <dialog>s render in the top layer too, so a plain
+  // z-index can never win. A manual popover lets the cursor sit above them.
+  const canPopover = typeof root.showPopover === 'function';
+  if (canPopover) root.setAttribute('popover', 'manual');
 
   const canvas = document.createElement('canvas');
   canvas.className = 'px-cursor__arrow';
@@ -71,7 +75,13 @@ export function mountCursor() {
   document.body.style.cursor = 'none';
 
   const style = document.createElement('style');
-  style.textContent = `.has-custom-cursor, .has-custom-cursor * { cursor: none !important; }`;
+  style.textContent = `
+    .has-custom-cursor, .has-custom-cursor * { cursor: none !important; }
+    .px-cursor[popover] {
+      position: fixed; inset: 0; width: 100vw; height: 100vh;
+      margin: 0; padding: 0; border: 0; background: transparent;
+      overflow: visible; pointer-events: none; color: inherit;
+    }`;
   document.head.appendChild(style);
 
   let mx = window.innerWidth / 2;
@@ -119,6 +129,22 @@ export function mountCursor() {
     raf = requestAnimationFrame(tick);
   };
 
+  const raise = () => {
+    if (!canPopover) return;
+    try {
+      if (root.matches(':popover-open')) root.hidePopover();
+      root.showPopover();
+    } catch (_) { /* popover unsupported or detached */ }
+  };
+  raise();
+
+  // The most recently opened top-layer element draws on top, so re-show the
+  // cursor right after any <dialog> opens.
+  const dialogWatcher = new MutationObserver((records) => {
+    if (records.some((r) => r.target instanceof HTMLDialogElement && r.target.open)) raise();
+  });
+  dialogWatcher.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['open'] });
+
   window.addEventListener('pointermove', onMove, { passive: true });
   window.addEventListener('pointerdown', onDown);
   window.addEventListener('pointerup', onUp);
@@ -129,6 +155,7 @@ export function mountCursor() {
   return {
     destroy() {
       running = false;
+      dialogWatcher.disconnect();
       cancelAnimationFrame(raf);
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerdown', onDown);

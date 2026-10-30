@@ -48,3 +48,168 @@
 @media(max-width:760px){.panel{transform:none}}
 @media(max-width:760px){.ambient-bubbles img:nth-child(3n){display:none}.ambient-bubbles img{opacity:.13}}
 @media(prefers-reduced-motion:reduce){.ambient-bubbles img{animation:ambient-fade 5s ease-in-out infinite alternate}@keyframes ambient-fade{from{opacity:.11}to{opacity:.18}}}
+
+
+
+/* Shark ID - refined border styling */
+
+/* Final Shark ID refinements */
+
+.panel--id {
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
+}
+
+.panel--id .panel__inner {
+  background: transparent;
+  padding: 18px;
+}
+
+.id-card {
+  width: min(1000px, 100%);
+  margin: 0 auto;
+  min-height: 620px;
+  background: var(--panel);
+  border: 7px solid var(--navy);
+  clip-path: polygon(
+    0 16px, 16px 16px, 16px 0,
+    calc(100% - 16px) 0,
+    calc(100% - 16px) 16px,
+    100% 16px, 100% calc(100% - 16px),
+    calc(100% - 16px) calc(100% - 16px),
+    calc(100% - 16px) 100%,
+    16px 100%, 16px calc(100% - 16px),
+    0 calc(100% - 16px)
+  );
+  padding: 48px 40px 38px;
+}
+
+.id-stars {
+  inset: 20px 18px;
+}
+
+.id-photo {
+  border-width: 6px;
+}
+
+.id-grid {
+  gap: 28px 36px;
+}
+
+/* Keep the About section clear of decorative stars */
+.about {
+  position: relative;
+  z-index: 2;
+}
+
+
+
+/* ==========================================================
+   Shark ID card - match reference design
+   (appended last so it overrides the earlier .id-card rules)
+   ========================================================== */
+.id-card{
+  --navy-ink:#13375e;
+  --star:clamp(16px,2.5vw,30px);
+  --gutter-x:clamp(70px,10.4vw,104px);
+  --photo-w:clamp(190px,26.8%,268px);
+  position:relative;
+  width:min(1000px,100%);
+  min-height:0;
+  margin:0 auto;
+  padding:124px var(--gutter-x) 88px;
+  border:20px solid var(--navy-ink);
+  /* two-step pixel corners */
+  clip-path:polygon(
+    0 35px, 10px 35px, 10px 8px, 35px 8px, 35px 0,
+    calc(100% - 35px) 0, calc(100% - 35px) 8px, calc(100% - 10px) 8px, calc(100% - 10px) 35px, 100% 35px,
+    100% calc(100% - 35px), calc(100% - 10px) calc(100% - 35px), calc(100% - 10px) calc(100% - 8px), calc(100% - 35px) calc(100% - 8px), calc(100% - 35px) 100%,
+    35px 100%, 35px calc(100% - 8px), 10px calc(100% - 8px), 10px calc(100% - 35px), 0 calc(100% - 35px)
+  );
+}
+
+/* stepped inner corners: navy fills the corners of the padding box, leaving a stair-shaped light area */
+.id-card::before{
+  content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:var(--navy-ink);
+  clip-path:polygon(evenodd,
+    0 0, 100% 0, 100% 100%, 0 100%, 0 0,
+    35px 0, calc(100% - 35px) 0, calc(100% - 35px) 17px, calc(100% - 17px) 17px, calc(100% - 17px) 35px, 100% 35px,
+    100% calc(100% - 35px), calc(100% - 17px) calc(100% - 35px), calc(100% - 17px) calc(100% - 17px), calc(100% - 35px) calc(100% - 17px), calc(100% - 35px) 100%,
+    35px 100%, 35px calc(100% - 17px), 17px calc(100% - 17px), 17px calc(100% - 35px), 0 calc(100% - 35px),
+    0 35px, 17px 35px, 17px 17px, 35px 17px, 35px 0
+  );
+}
+
+/* ---- stars: 14 top, 14 bottom, 9 per side, each in its own gutter ---- */
+.id-card .id-stars{position:absolute;inset:0;pointer-events:none;z-index:0}
+.id-card .id-stars i{
+  position:static;display:block;flex:none;
+  width:var(--star);height:var(--star);
+  background:var(--navy-ink);
+  clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);
+}
+.id-stars__row{position:absolute;left:8%;right:8%;display:flex;justify-content:space-between;transform:translateY(-50%)}
+.id-stars__row--top{top:7%}
+.id-stars__row--bottom{top:93%}
+.id-stars__col{position:absolute;top:12.5%;bottom:12.5%;display:flex;flex-direction:column;justify-content:space-between;transform:translateX(-50%)}
+.id-stars__col--left{left:3.6%}
+.id-stars__col--right{left:96.4%}
+
+/* ---- layout ---- */
+.id-card .id-grid{
+  position:relative;z-index:1;
+  display:grid;
+  grid-template-columns:var(--photo-w) minmax(0,1fr);
+  column-gap:clamp(20px,3.8vw,38px);
+  row-gap:34px;
+  align-items:start;
+}
+.id-card .id-title{
+  position:absolute;z-index:1;
+  top:118px;left:calc(var(--gutter-x) + var(--photo-w) + clamp(20px,3.8vw,38px));right:var(--gutter-x);
+  margin:0;text-align:center;font-size:clamp(24px,3.2vw,38px);line-height:1;color:var(--navy-ink);
+}
+.id-card .id-photo{
+  width:100%;height:auto;aspect-ratio:268/285;
+  border:14px solid var(--navy-ink);
+  background:#efe6e8;
+  padding:0;
+  box-shadow:4px 4px 0 rgba(19,55,94,.25);
+  clip-path:polygon(0 6px,6px 6px,6px 0,calc(100% - 6px) 0,calc(100% - 6px) 6px,100% 6px,100% calc(100% - 6px),calc(100% - 6px) calc(100% - 6px),calc(100% - 6px) 100%,6px 100%,6px calc(100% - 6px),0 calc(100% - 6px));
+}
+.id-card .id-photo img{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
+
+.id-card .id-fields{display:flex;flex-direction:column;gap:22px;padding-top:56px;min-width:0}
+.id-card .field-label{margin:0 0 6px;font-size:clamp(13px,1.6vw,16px);line-height:1;color:var(--navy-ink)}
+.id-card .field-box{
+  box-sizing:border-box;min-height:44px;display:flex;align-items:center;padding:0 16px;
+  border:4px solid var(--navy-ink);background:rgba(240,232,235,.92);color:var(--navy-ink);
+  font-size:clamp(14px,1.8vw,18px);overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
+}
+.id-card .traits{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(8px,1.5vw,15px)}
+.id-card .trait{
+  box-sizing:border-box;min-height:44px;display:flex;align-items:center;justify-content:center;
+  margin:0;padding:0 8px;border:4px solid var(--navy-ink);background:rgba(240,232,235,.92);
+  color:var(--navy-ink);font-size:clamp(14px,1.8vw,18px);
+}
+.id-card .about{grid-column:1/-1;position:relative;z-index:1}
+.id-card .about-box{
+  box-sizing:border-box;min-height:98px;padding:16px 18px;
+  border:4px solid var(--navy-ink);background:rgba(240,232,235,.92);color:var(--navy-ink);
+  font-size:clamp(14px,1.8vw,18px);line-height:1.45;
+}
+
+/* ---- mobile ---- */
+@media(max-width:760px){
+  .id-card{--star:16px;--gutter-x:22px;padding:84px 22px 54px}
+  .id-stars__col{display:none}
+  .id-stars__row{left:5%;right:5%}
+  .id-stars__row--top{top:30px}
+  .id-stars__row--bottom{top:auto;bottom:14px;transform:none}
+  .id-card .id-grid{grid-template-columns:1fr;row-gap:20px}
+  .id-card .id-title{position:static;grid-column:1/-1;margin:-8px 0 6px}
+  .id-card .id-photo{width:min(260px,100%);margin:0 auto}
+  .id-card .id-fields{padding-top:0}
+}
