@@ -3,12 +3,14 @@ import { QUESTIONS, scoreAnswers } from './questions.js';
 import { ZONES } from './zones.js';
 import { mountBubble } from './bubble.js';
 import { mountCursor } from './cursor.js';
+import { mountSound, playSound } from './sound.js';
 
 const app=document.querySelector('#app'), dialog=document.querySelector('#shark-dialog');
 const state={page:'home',index:0,answers:[],order:[],result:null,name:sessionStorage.getItem('sharkName')||'',completed:false,completionId:null,hover:null};
 
 mountBubble(document.querySelector('#site-bubble'),{size:69,src:'assets/bubble.png',muted:true,ariaLabel:'Go to home page',onBurst:()=>setPage('home')});
 mountCursor();
+mountSound();
 
 const escape=(s='')=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -175,6 +177,7 @@ async function countCompletion(){
 
 
 function renderResult(){
+ playSound('fanfare');
  const primary=SHARKS[state.result?.primary||'thresher'];
  const secondary=SHARKS[state.result?.secondary||'hammerhead'];
 
@@ -458,9 +461,10 @@ const hash=location.hash.slice(1);
 if(['what','why','who','where'].includes(hash))state.page=hash;
 render();
 
-/* Translucent panels: remember each panel's original border paint and thickness
-   (the CSS then redraws it as a ring so the middle can be see-through). */
-function liftPanelRings() {
+/* Pixel-stepped corners: remember each box's original border paint and width
+   (the CSS then redraws the border as a ring so the stepped corners stay continuous). */
+const PX_BOXES = '.sound-toggle, .answer, .pixel-button, .field-box, .trait, .about-box, .id-photo, .tile__art';
+function liftPixelBoxes() {
   document.querySelectorAll('.panel:not([data-ring]):not(.panel--id)').forEach((p) => {
     const cs = getComputedStyle(p);
     p.style.setProperty('--ring-image', cs.backgroundImage);
@@ -468,6 +472,15 @@ function liftPanelRings() {
     p.style.setProperty('--ring', cs.paddingTop);
     p.setAttribute('data-ring', '');
   });
+  document.querySelectorAll(`${PX_BOXES}`).forEach((el) => {
+    if (el.hasAttribute('data-px')) return;
+    const cs = getComputedStyle(el);
+    const bw = parseFloat(cs.borderTopWidth);
+    if (!bw) return;
+    el.style.setProperty('--bc', cs.borderTopColor);
+    el.style.setProperty('--bw', `${bw}px`);
+    el.setAttribute('data-px', '');
+  });
 }
-new MutationObserver(liftPanelRings).observe(document.body, { childList: true, subtree: true });
-liftPanelRings();
+new MutationObserver(liftPixelBoxes).observe(document.body, { childList: true, subtree: true });
+liftPixelBoxes();

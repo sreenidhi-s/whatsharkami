@@ -259,15 +259,40 @@
 
 
 /* ==========================================================
-   Translucent panels on every page (like the Figma design)
-   app.js copies each panel's original border colour/gradient and thickness
-   into --ring-image / --ring-color / --ring, then marks it data-ring.
-   The ring is redrawn on ::before so the middle can be see-through.
+   Pixel-stepped corners everywhere (Figma style)
+   Every box gets two-step outer corners AND matching stepped inner corners,
+   with the border drawn as a ring on ::before so the corners stay continuous.
+   app.js copies each element's original border colour/width into CSS
+   variables (--ring/--ring-image/--ring-color for panels, --bc/--bw for
+   smaller boxes) and marks it, because the originals are cleared here.
    ========================================================== */
+
+/* ---- big panels: translucent fill + gradient/colour ring ---- */
 .panel[data-ring]:not(.panel--id){
-  --cut:14px;                      /* inner pixel-corner size (same as .panel__inner clip-path) */
   position:relative;
   background:none !important;
+  clip-path:polygon(
+    0 calc(var(--ring) * 2),
+    calc(var(--ring) * .55) calc(var(--ring) * 2),
+    calc(var(--ring) * .55) calc(var(--ring) * .55),
+    calc(var(--ring) * 2) calc(var(--ring) * .55),
+    calc(var(--ring) * 2) 0,
+    calc(100% - calc(var(--ring) * 2)) 0,
+    calc(100% - calc(var(--ring) * 2)) calc(var(--ring) * .55),
+    calc(100% - calc(var(--ring) * .55)) calc(var(--ring) * .55),
+    calc(100% - calc(var(--ring) * .55)) calc(var(--ring) * 2),
+    100% calc(var(--ring) * 2),
+    100% calc(100% - calc(var(--ring) * 2)),
+    calc(100% - calc(var(--ring) * .55)) calc(100% - calc(var(--ring) * 2)),
+    calc(100% - calc(var(--ring) * .55)) calc(100% - calc(var(--ring) * .55)),
+    calc(100% - calc(var(--ring) * 2)) calc(100% - calc(var(--ring) * .55)),
+    calc(100% - calc(var(--ring) * 2)) 100%,
+    calc(var(--ring) * 2) 100%,
+    calc(var(--ring) * 2) calc(100% - calc(var(--ring) * .55)),
+    calc(var(--ring) * .55) calc(100% - calc(var(--ring) * .55)),
+    calc(var(--ring) * .55) calc(100% - calc(var(--ring) * 2)),
+    0 calc(100% - calc(var(--ring) * 2))
+  ) !important;
 }
 .panel[data-ring]:not(.panel--id)::before{
   content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
@@ -275,22 +300,124 @@
   background-color:var(--ring-color,transparent);
   clip-path:polygon(evenodd,
     0 0, 100% 0, 100% 100%, 0 100%, 0 0,
-    calc(var(--ring) + var(--cut)) var(--ring),
-    calc(100% - var(--ring) - var(--cut)) var(--ring),
-    calc(100% - var(--ring) - var(--cut)) calc(var(--ring) + var(--cut)),
-    calc(100% - var(--ring)) calc(var(--ring) + var(--cut)),
-    calc(100% - var(--ring)) calc(100% - var(--ring) - var(--cut)),
-    calc(100% - var(--ring) - var(--cut)) calc(100% - var(--ring) - var(--cut)),
-    calc(100% - var(--ring) - var(--cut)) calc(100% - var(--ring)),
-    calc(var(--ring) + var(--cut)) calc(100% - var(--ring)),
-    calc(var(--ring) + var(--cut)) calc(100% - var(--ring) - var(--cut)),
-    var(--ring) calc(100% - var(--ring) - var(--cut)),
-    var(--ring) calc(var(--ring) + var(--cut)),
-    calc(var(--ring) + var(--cut)) calc(var(--ring) + var(--cut)),
-    calc(var(--ring) + var(--cut)) var(--ring)
+    var(--ring) calc(var(--ring) + calc(var(--ring) * 2)),
+    calc(var(--ring) + calc(var(--ring) * .55)) calc(var(--ring) + calc(var(--ring) * 2)),
+    calc(var(--ring) + calc(var(--ring) * .55)) calc(var(--ring) + calc(var(--ring) * .55)),
+    calc(var(--ring) + calc(var(--ring) * 2)) calc(var(--ring) + calc(var(--ring) * .55)),
+    calc(var(--ring) + calc(var(--ring) * 2)) var(--ring),
+    calc(100% - var(--ring) - calc(var(--ring) * 2)) var(--ring),
+    calc(100% - var(--ring) - calc(var(--ring) * 2)) calc(var(--ring) + calc(var(--ring) * .55)),
+    calc(100% - var(--ring) - calc(var(--ring) * .55)) calc(var(--ring) + calc(var(--ring) * .55)),
+    calc(100% - var(--ring) - calc(var(--ring) * .55)) calc(var(--ring) + calc(var(--ring) * 2)),
+    calc(100% - var(--ring)) calc(var(--ring) + calc(var(--ring) * 2)),
+    calc(100% - var(--ring)) calc(100% - var(--ring) - calc(var(--ring) * 2)),
+    calc(100% - var(--ring) - calc(var(--ring) * .55)) calc(100% - var(--ring) - calc(var(--ring) * 2)),
+    calc(100% - var(--ring) - calc(var(--ring) * .55)) calc(100% - var(--ring) - calc(var(--ring) * .55)),
+    calc(100% - var(--ring) - calc(var(--ring) * 2)) calc(100% - var(--ring) - calc(var(--ring) * .55)),
+    calc(100% - var(--ring) - calc(var(--ring) * 2)) calc(100% - var(--ring)),
+    calc(var(--ring) + calc(var(--ring) * 2)) calc(100% - var(--ring)),
+    calc(var(--ring) + calc(var(--ring) * 2)) calc(100% - var(--ring) - calc(var(--ring) * .55)),
+    calc(var(--ring) + calc(var(--ring) * .55)) calc(100% - var(--ring) - calc(var(--ring) * .55)),
+    calc(var(--ring) + calc(var(--ring) * .55)) calc(100% - var(--ring) - calc(var(--ring) * 2)),
+    var(--ring) calc(100% - var(--ring) - calc(var(--ring) * 2)),
+    var(--ring) calc(var(--ring) + calc(var(--ring) * 2))
   );
 }
 .panel[data-ring]:not(.panel--id) .panel__inner{
   position:relative;z-index:1;
   background:rgba(205,210,220,.58) !important;   /* lower .58 for more see-through */
+  clip-path:polygon(
+    0 calc(var(--ring) * 2),
+    calc(var(--ring) * .55) calc(var(--ring) * 2),
+    calc(var(--ring) * .55) calc(var(--ring) * .55),
+    calc(var(--ring) * 2) calc(var(--ring) * .55),
+    calc(var(--ring) * 2) 0,
+    calc(100% - calc(var(--ring) * 2)) 0,
+    calc(100% - calc(var(--ring) * 2)) calc(var(--ring) * .55),
+    calc(100% - calc(var(--ring) * .55)) calc(var(--ring) * .55),
+    calc(100% - calc(var(--ring) * .55)) calc(var(--ring) * 2),
+    100% calc(var(--ring) * 2),
+    100% calc(100% - calc(var(--ring) * 2)),
+    calc(100% - calc(var(--ring) * .55)) calc(100% - calc(var(--ring) * 2)),
+    calc(100% - calc(var(--ring) * .55)) calc(100% - calc(var(--ring) * .55)),
+    calc(100% - calc(var(--ring) * 2)) calc(100% - calc(var(--ring) * .55)),
+    calc(100% - calc(var(--ring) * 2)) 100%,
+    calc(var(--ring) * 2) 100%,
+    calc(var(--ring) * 2) calc(100% - calc(var(--ring) * .55)),
+    calc(var(--ring) * .55) calc(100% - calc(var(--ring) * .55)),
+    calc(var(--ring) * .55) calc(100% - calc(var(--ring) * 2)),
+    0 calc(100% - calc(var(--ring) * 2))
+  );
 }
+
+/* ---- smaller boxes: answers, buttons, fields, trait chips, About box, image frame ---- */
+[data-px]{
+  position:relative;
+  border-color:transparent !important;
+  clip-path:polygon(
+    0 8px,
+    4px 8px,
+    4px 4px,
+    8px 4px,
+    8px 0,
+    calc(100% - 8px) 0,
+    calc(100% - 8px) 4px,
+    calc(100% - 4px) 4px,
+    calc(100% - 4px) 8px,
+    100% 8px,
+    100% calc(100% - 8px),
+    calc(100% - 4px) calc(100% - 8px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 8px) calc(100% - 4px),
+    calc(100% - 8px) 100%,
+    8px 100%,
+    8px calc(100% - 4px),
+    4px calc(100% - 4px),
+    4px calc(100% - 8px),
+    0 calc(100% - 8px)
+  ) !important;
+}
+[data-px]::before{
+  content:"";position:absolute;inset:calc(var(--bw) * -1);z-index:0;pointer-events:none;
+  background:var(--bc);
+  clip-path:polygon(evenodd,
+    0 0, 100% 0, 100% 100%, 0 100%, 0 0,
+    var(--bw) calc(var(--bw) + 8px),
+    calc(var(--bw) + 4px) calc(var(--bw) + 8px),
+    calc(var(--bw) + 4px) calc(var(--bw) + 4px),
+    calc(var(--bw) + 8px) calc(var(--bw) + 4px),
+    calc(var(--bw) + 8px) var(--bw),
+    calc(100% - var(--bw) - 8px) var(--bw),
+    calc(100% - var(--bw) - 8px) calc(var(--bw) + 4px),
+    calc(100% - var(--bw) - 4px) calc(var(--bw) + 4px),
+    calc(100% - var(--bw) - 4px) calc(var(--bw) + 8px),
+    calc(100% - var(--bw)) calc(var(--bw) + 8px),
+    calc(100% - var(--bw)) calc(100% - var(--bw) - 8px),
+    calc(100% - var(--bw) - 4px) calc(100% - var(--bw) - 8px),
+    calc(100% - var(--bw) - 4px) calc(100% - var(--bw) - 4px),
+    calc(100% - var(--bw) - 8px) calc(100% - var(--bw) - 4px),
+    calc(100% - var(--bw) - 8px) calc(100% - var(--bw)),
+    calc(var(--bw) + 8px) calc(100% - var(--bw)),
+    calc(var(--bw) + 8px) calc(100% - var(--bw) - 4px),
+    calc(var(--bw) + 4px) calc(100% - var(--bw) - 4px),
+    calc(var(--bw) + 4px) calc(100% - var(--bw) - 8px),
+    var(--bw) calc(100% - var(--bw) - 8px),
+    var(--bw) calc(var(--bw) + 8px)
+  );
+}
+/* a normal outline would be clipped, so keep keyboard focus visible inside the box */
+[data-px]:focus-visible{outline-offset:calc(var(--bw) * -1 - 3px)}
+
+
+/* ---- sound on/off button ---- */
+.sound-toggle{
+  position:fixed;left:16px;bottom:16px;z-index:60;
+  width:52px;height:52px;padding:0;
+  display:grid;place-items:center;
+  border:4px solid var(--plum,#825c6c);
+  background:#fff2f2;color:var(--plum,#825c6c);
+  cursor:pointer;
+}
+.sound-toggle:hover{background:var(--mint,#bdf0cf)}
+.sound-toggle:active{transform:translateY(2px)}
+@media(max-width:760px){.sound-toggle{left:10px;bottom:10px;width:46px;height:46px}}
