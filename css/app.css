@@ -34,6 +34,33 @@
 .name-form{display:block;position:relative;width:min(520px,100%)}
 .name-form input{height:76px;border-radius:0;font-size:26px;border-width:8px}
 .mascot{width:min(300px,30vw)}
+.whale-home{position:relative;width:min(300px,30vw);aspect-ratio:504/540;justify-self:end;display:grid;place-items:center}
+.whale-home .whale-shark{display:block;width:100%;height:auto;image-rendering:pixelated;transform-origin:50% 54%;animation:whale-idle 4.8s ease-in-out infinite}
+.whale-home.is-typing .whale-shark{animation:whale-nod 230ms steps(4,end)}
+.whale-home.is-nudging .whale-shark{animation:whale-nudge 560ms steps(5,end)}
+.whale-speech{position:absolute;z-index:4;top:8%;right:-24%;width:max-content;max-width:70%;padding:7px 10px;transform:translate(0,6px) scale(.8);border:3px solid var(--navy);background:var(--cream);color:var(--navy);box-shadow:3px 3px 0 rgba(19,55,94,.22);font:clamp(12px,1.35vw,16px) var(--font);text-align:center;line-height:1.2}
+.whale-speech::after{content:"";position:absolute;left:27%;bottom:-9px;width:10px;height:8px;background:var(--cream);border-right:3px solid var(--navy);border-bottom:3px solid var(--navy);transform:rotate(45deg)}
+.whale-speech.is-visible{animation:whale-speech-pop 300ms steps(4,end) forwards}
+.whale-eyelids{position:absolute;inset:0;pointer-events:none}
+.whale-eyelids i{position:absolute;top:78%;width:5%;height:2.4%;background:#4e548b;opacity:0}
+.whale-eyelids i:first-child{left:26.5%}.whale-eyelids i:last-child{right:26.5%}
+.whale-home.is-blinking .whale-eyelids i{opacity:1}
+.whale-plankton{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.whale-plankton i{position:absolute;width:4px;height:4px;background:#fff2f2;opacity:0;image-rendering:pixelated}
+.whale-plankton i:first-child{left:12%;top:56%;animation:whale-plankton-drift 8s steps(8,end) infinite}
+.whale-plankton i:last-child{right:12%;top:39%;background:var(--mint);animation:whale-plankton-drift 9s steps(8,end) 3.6s infinite}
+.whale-mouth-bubble{position:absolute;z-index:5;left:50%;top:77%;width:25px;height:27px;transform:translate(-50%,5px) scale(.6);opacity:0;pointer-events:none}
+.whale-mouth-bubble.is-rising{animation:whale-bubble-rise 420ms steps(5,end) forwards;pointer-events:auto}
+.whale-mouth-bubble .bubble{z-index:0}
+.home-start{appearance:none;-webkit-appearance:none;display:inline-block;box-sizing:border-box;min-width:140px;padding:9px 28px;border:4px solid transparent;border-image:linear-gradient(180deg,#dcf5cf 0%,#fadadf 38%,#c8e1f4 68%,#cfc2f7 100%) 1;border-radius:0;background:transparent;color:var(--plum);font:18px var(--font);cursor:pointer;clip-path:polygon(0 8px,4px 8px,4px 4px,8px 4px,8px 0,calc(100% - 8px) 0,calc(100% - 8px) 4px,calc(100% - 4px) 4px,calc(100% - 4px) 8px,100% 8px,100% calc(100% - 8px),calc(100% - 4px) calc(100% - 8px),calc(100% - 4px) calc(100% - 4px),calc(100% - 8px) calc(100% - 4px),calc(100% - 8px) 100%,8px 100%,8px calc(100% - 4px),4px calc(100% - 4px),4px calc(100% - 8px),0 calc(100% - 8px))}
+.home-start:hover{background:transparent}
+@keyframes whale-idle{0%,100%{transform:translateY(0) rotate(0) scaleX(1)}35%{transform:translateY(-5px) rotate(-.5deg) scaleX(1.01)}70%{transform:translateY(2px) rotate(.5deg) scaleX(.99)}}
+@keyframes whale-nod{0%{transform:translateY(0) rotate(0)}35%{transform:translateY(-8px) rotate(-1deg)}70%{transform:translateY(1px) rotate(1deg)}100%{transform:translateY(0) rotate(0)}}
+@keyframes whale-nudge{0%,100%{transform:rotate(0)}25%{transform:rotate(-4deg) translateX(-3px)}60%{transform:rotate(4deg) translateX(3px)}}
+@keyframes whale-speech-pop{0%{opacity:0;transform:translate(0,12px) scale(.55)}70%{opacity:1;transform:translate(0,-4px) scale(1.06)}100%{opacity:1;transform:translate(0,0) scale(1)}}
+@keyframes whale-bubble-rise{to{opacity:1;transform:translate(-50%,-7px) scale(1)}}
+@keyframes whale-plankton-drift{0%,65%,100%{opacity:0;transform:translate(0,8px)}72%{opacity:.9}88%{opacity:.65;transform:translate(13px,-16px)}}
+@media(max-width:980px){.whale-home{justify-self:center}}
 .page-title{font-size:clamp(50px,5.2vw,72px);line-height:1.15;margin-top:2px}
 .accent{margin:10px 0 22px}.page-body{font-size:23px;line-height:1.5}.subtitle{font-size:21px}
 .id-card{background:var(--panel);border:12px double #13375e;clip-path:none;min-height:0;padding:64px 48px 34px}
@@ -44,7 +71,7 @@
 .bubble__idle{display:block}
 .digits b{animation:digit-step 220ms steps(4,end)}
 @keyframes digit-step{from{opacity:.35;transform:translateY(-7px)}to{opacity:1;transform:translateY(0)}}
-@media(max-width:760px){.home-row{grid-template-columns:1fr;padding:0 6px;gap:12px;margin-top:36px}.home-title{font-size:clamp(48px,12vw,80px)}.home-lead{font-size:18px}.mascot{width:min(220px,60vw);justify-self:center;order:-1}.name-form input{height:64px}.page-body{font-size:18px}.map-card{max-width:min(350px,90%)}.id-photo{width:min(292px,100%);height:280px}}
+@media(max-width:760px){.home-row{grid-template-columns:1fr;padding:0 6px;gap:12px;margin-top:36px}.home-title{font-size:clamp(48px,12vw,80px)}.home-lead{font-size:18px}.whale-home{width:min(220px,60vw);justify-self:center;order:-1}.whale-speech{right:-25%;max-width:66%}.name-form input{height:64px}.page-body{font-size:18px}.map-card{max-width:min(350px,90%)}.id-photo{width:min(292px,100%);height:280px}}
 @media(max-width:760px){.panel{transform:none}}
 @media(max-width:760px){.ambient-bubbles img:nth-child(3n){display:none}.ambient-bubbles img{opacity:.13}}
 @media(prefers-reduced-motion:reduce){.ambient-bubbles img{animation:ambient-fade 5s ease-in-out infinite alternate}@keyframes ambient-fade{from{opacity:.11}to{opacity:.18}}}
@@ -509,7 +536,16 @@
 }
 .sound-toggle:hover{background:var(--mint,#bdf0cf)}
 .sound-toggle:active{transform:translateY(2px)}
+.sound-prompt{position:fixed;left:16px;bottom:80px;z-index:61;width:min(340px,calc(100vw - 32px));box-sizing:border-box;display:grid;grid-template-columns:1fr auto;gap:10px;padding:15px;border:3px solid var(--navy,#173d68);background:var(--cream,#fff2f2);color:var(--navy,#173d68);box-shadow:4px 4px 0 rgba(19,55,94,.3);font:16px var(--font);}
+.sound-prompt[hidden]{display:none}
+.sound-prompt__message{grid-column:1/-1;padding-right:18px;line-height:1.3}
+.sound-prompt__enable,.sound-prompt__dismiss{border:2px solid var(--navy,#173d68);background:transparent;color:var(--navy,#173d68);font:14px var(--font);cursor:pointer}
+.sound-prompt__enable{padding:6px 10px}
+.sound-prompt__enable:hover{background:var(--mint,#bdf0cf)}
+.sound-prompt__dismiss{position:absolute;top:4px;right:4px;width:24px;height:24px;padding:0;font-size:17px;line-height:1}
+.sound-prompt button:focus-visible{outline:3px solid var(--plum,#825c6c);outline-offset:2px}
 @media(max-width:760px){.sound-toggle{left:10px;bottom:10px;width:46px;height:46px}}
+@media(max-width:760px){.sound-prompt{left:10px;bottom:66px;width:min(340px,calc(100vw - 20px))}}
 
 
 /* ---- ocean background: pixel fish + bubbles (drawn by ocean.js) ---- */

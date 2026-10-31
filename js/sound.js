@@ -8,7 +8,7 @@
  */
 
 const KEY = 'sharkSoundMuted';
-const MASTER_VOLUME = 0.5; // 0 - 1, overall loudness
+const MASTER_VOLUME = 1.0; // 0 - 1, overall loudness (bubble-pop clip has its own volume)
 
 let ctx = null;
 let master = null;
@@ -91,7 +91,7 @@ const SOUNDS = {
   // soft typing tick, slightly different each time; arg 'delete' for backspace
   key: (c, kind) => {
     const f = kind === 'delete' ? 520 : 760 + Math.random() * 160;
-    tone(c, { f, f2: f * 0.8, d: 0.035, type: 'triangle', v: 0.15 });
+    tone(c, { f, f2: f * 0.8, d: 0.035, type: 'triangle', v: 0.22 });
   },
   tick: (c) => tone(c, { f: 1400, d: 0.025, type: 'triangle', v: 0.035 }),
   click: (c) => tone(c, { f: 520, f2: 700, d: 0.06, v: 0.1 }),
@@ -104,6 +104,15 @@ const SOUNDS = {
     tone(c, { f: NOTES.G5, t: 0.09, d: 0.14 });
   },
   back: (c) => tone(c, { f: 520, f2: 330, d: 0.09, v: 0.1 }),
+  scan: (c, duration = 2100) => {
+    const seconds = Math.max(0.18, Math.min(duration / 1000, 2.2));
+    swoosh(c, { from: 520, to: 2400, d: seconds, v: 0.045 });
+    const pulseGap = 0.2;
+    for (let i = 0; i * pulseGap < seconds; i += 1) {
+      const f = 540 + (i % 4) * 115;
+      tone(c, { f, f2: f * 1.25, t: i * pulseGap, d: 0.055, type: 'sine', v: 0.065 });
+    }
+  },
   success: (c) => {
     tone(c, { f: NOTES.E5, d: 0.08 });
     tone(c, { f: NOTES.G5, t: 0.08, d: 0.08 });
@@ -224,11 +233,16 @@ function mountToggle() {
   const btn = document.createElement('button');
   btn.type = 'button';
   btn.className = 'sound-toggle';
+  const prompt = document.createElement('aside');
+  prompt.className = 'sound-prompt';
+  prompt.hidden = true;
+  prompt.innerHTML = '<span class="sound-prompt__message">Keep your volume up, you\'re missing out on the fun :(</span><button type="button" class="sound-prompt__enable">Turn sound on</button><button type="button" class="sound-prompt__dismiss" aria-label="Dismiss sound reminder">×</button>';
   const paint = () => {
     btn.setAttribute('aria-pressed', String(!muted));
     btn.setAttribute('aria-label', muted ? 'Turn sound on' : 'Turn sound off');
     btn.title = muted ? 'Sound off' : 'Sound on';
     btn.innerHTML = `<svg viewBox="0 0 16 16" width="26" height="26" shape-rendering="crispEdges" fill="currentColor" aria-hidden="true">${muted ? ICON_OFF : ICON_ON}</svg>`;
+    prompt.hidden = !muted;
   };
   paint();
   btn.addEventListener('click', () => {
@@ -238,7 +252,10 @@ function mountToggle() {
     kickAmbience();
     if (!muted) playSound('click');
   });
+  prompt.querySelector('.sound-prompt__enable').addEventListener('click', () => btn.click());
+  prompt.querySelector('.sound-prompt__dismiss').addEventListener('click', () => { prompt.hidden = true; });
   document.body.appendChild(btn);
+  document.body.appendChild(prompt);
   return btn;
 }
 

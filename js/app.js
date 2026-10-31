@@ -12,6 +12,10 @@ const state={page:'home',index:0,answers:[],order:[],result:null,name:sessionSto
 state.customization={theme:'navy',border:'star',stickers:[],activeTab:'color',selectedSticker:null};
 let revealTimeout=null;
 let cardPreviewRevision=0;
+let homeWhaleTimers=[];
+let homeWhaleBubble=null;
+let whaleNodTimer=null;
+let whaleBubbleHideTimer=null;
 
 mountBubble(document.querySelector('#site-bubble'),{size:69,src:'assets/bubble.png',muted:true,ariaLabel:'Go to home page',onBurst:()=>setPage('home')});
 mountCursor();
@@ -22,9 +26,43 @@ const escape=(s='')=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>
 
 function setPage(page){
  if(revealTimeout&&page!=='scanning'){clearTimeout(revealTimeout);revealTimeout=null;}
+ if(page!=='home')clearHomeWhale();
  state.page=page; history.replaceState(null,'',`#${page}`); render();
 }
 function frame(inner,cls=''){return `<section class="panel ${cls}"><div class="panel__inner">${inner}</div></section>`;}
+
+function clearHomeWhale(){
+ homeWhaleTimers.forEach(timer=>clearTimeout(timer));homeWhaleTimers=[];whaleNodTimer=null;
+ whaleBubbleHideTimer=null;
+ homeWhaleBubble?.destroy();homeWhaleBubble=null;
+}
+function cancelWhaleTimer(timer){
+ if(!timer)return;
+ clearTimeout(timer);homeWhaleTimers=homeWhaleTimers.filter(item=>item!==timer);
+}
+function scheduleWhaleTimer(callback,delay){
+ const timer=window.setTimeout(()=>{homeWhaleTimers=homeWhaleTimers.filter(item=>item!==timer);callback();},delay);
+ homeWhaleTimers.push(timer);return timer;
+}
+function showWhaleSpeech(speech,message){
+ speech.textContent=message;speech.hidden=false;
+ speech.classList.remove('is-visible');void speech.offsetWidth;speech.classList.add('is-visible');
+}
+function scheduleWhaleBlink(whale){
+ scheduleWhaleTimer(()=>{
+  if(!whale.isConnected)return;
+  whale.classList.add('is-blinking');
+  scheduleWhaleTimer(()=>whale.classList.remove('is-blinking'),130);
+  scheduleWhaleBlink(whale);
+ },3200+Math.random()*3200);
+}
+function scheduleWhaleBubble(host){
+ scheduleWhaleTimer(()=>{
+  if(!host.isConnected)return;
+  host.hidden=false;host.classList.remove('is-rising');void host.offsetWidth;host.classList.add('is-rising');
+  whaleBubbleHideTimer=scheduleWhaleTimer(()=>{whaleBubbleHideTimer=null;host.hidden=true;scheduleWhaleBubble(host);},2600);
+ },2600+Math.random()*3600);
+}
 
 function nav(){
  document.querySelectorAll('.nav__link').forEach(a=>{
@@ -45,18 +83,42 @@ function render(){
 }
 
 function renderHome(){
- app.innerHTML=frame(`<h1 class="home-title">WHATSHARKAMI.ORG</h1><p class="home-lead">answer some questions and find a shark that matches you!</p><div class="home-row"><form class="home-copy" id="start-form"><label class="home-prompt" for="start-name">enter your name to get started!</label><div class="name-form"><input id="start-name" maxlength="24" autocomplete="given-name" placeholder="your name" value="${escape(state.name)}"/></div></form><img class="mascot" src="assets/mascot.png" alt="Pixel shark mascot"/></div>`);
+ clearHomeWhale();
+ app.innerHTML=frame(`<h1 class="home-title">WHATSHARKAMI.ORG</h1><p class="home-lead">answer some questions and find a shark that matches you!</p><div class="home-row"><form class="home-copy" id="start-form"><label class="home-prompt" for="start-name">enter your name to get started!</label><div class="name-form"><input id="start-name" maxlength="24" autocomplete="given-name" placeholder="your name" value="${escape(state.name)}"/></div><button class="home-start" type="submit">START</button></form><div class="whale-home" id="whale-home"><div class="whale-speech" id="whale-speech" aria-live="polite" hidden></div><img class="mascot whale-shark" src="assets/shark-whale.png" alt="Whale shark mascot"/><span class="whale-eyelids" aria-hidden="true"><i></i><i></i></span><span class="whale-plankton" aria-hidden="true"><i></i><i></i></span><div class="whale-mouth-bubble" id="whale-mouth-bubble" hidden></div></div></div>`);
 
  const input=app.querySelector('#start-name');
+ const whale=app.querySelector('#whale-home');
+ const speech=app.querySelector('#whale-speech');
+ const mouthBubble=app.querySelector('#whale-mouth-bubble');
+
+ homeWhaleBubble=mountBubble(mouthBubble,{size:25,src:'assets/bubble.png',muted:true,ariaLabel:'Pop the whale shark’s bubble',onBurst:()=>{
+  cancelWhaleTimer(whaleBubbleHideTimer);
+  whaleBubbleHideTimer=scheduleWhaleTimer(()=>{whaleBubbleHideTimer=null;mouthBubble.hidden=true;scheduleWhaleBubble(mouthBubble);},820);
+ }});
+ scheduleWhaleBlink(whale);
+ scheduleWhaleBubble(mouthBubble);
+ if(state.name.trim())showWhaleSpeech(speech,`hi ${state.name.trim().split(/\s+/)[0].slice(0,14)}! ready?`);
 
  input.addEventListener('input',()=>{
   state.name=input.value.slice(0,24);
   sessionStorage.setItem('sharkName',state.name);
+  whale.classList.remove('is-typing');void whale.offsetWidth;whale.classList.add('is-typing');
+  cancelWhaleTimer(whaleNodTimer);
+  whaleNodTimer=scheduleWhaleTimer(()=>{whale.classList.remove('is-typing');whaleNodTimer=null;},240);
+  const firstName=state.name.trim().split(/\s+/)[0]?.slice(0,14);
+  if(firstName)showWhaleSpeech(speech,`hi ${firstName}! ready?`);
+  else speech.hidden=true;
  });
 
  app.querySelector('#start-form').addEventListener('submit',e=>{
   e.preventDefault();
   state.name=input.value.trim().slice(0,24);
+  if(!state.name){
+   showWhaleSpeech(speech,'i need a name first!');
+   whale.classList.remove('is-nudging');void whale.offsetWidth;whale.classList.add('is-nudging');
+   scheduleWhaleTimer(()=>whale.classList.remove('is-nudging'),620);
+   input.focus();return;
+  }
   sessionStorage.setItem('sharkName',state.name);
   state.index=0;
   state.answers=[];
@@ -110,8 +172,9 @@ function beginReveal(){
  state.result=scoreAnswers(state.answers);
  state.page='scanning';
  countCompletion();
- renderScanning();
  const duration=window.matchMedia('(prefers-reduced-motion: reduce)').matches?250:2100;
+ playSound('scan',duration);
+ renderScanning();
  revealTimeout=window.setTimeout(()=>{
   revealTimeout=null;
   if(state.page==='scanning')setPage('result');
