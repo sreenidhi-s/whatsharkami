@@ -421,3 +421,12 @@
 .sound-toggle:hover{background:var(--mint,#bdf0cf)}
 .sound-toggle:active{transform:translateY(2px)}
 @media(max-width:760px){.sound-toggle{left:10px;bottom:10px;width:46px;height:46px}}
+
+
+/* ---- ocean background: pixel fish + bubbles (drawn by ocean.js) ---- */
+.ambient-bubbles{display:none !important}   /* replaced by the interactive ocean layer */
+.ocean-canvas{
+  position:fixed;inset:0;width:100%;height:100%;
+  z-index:1;pointer-events:none;
+  image-rendering:pixelated;
+}

@@ -4,6 +4,7 @@ import { ZONES } from './zones.js';
 import { mountBubble } from './bubble.js';
 import { mountCursor } from './cursor.js';
 import { mountSound, playSound } from './sound.js';
+import { mountOcean } from './ocean.js';
 
 const app=document.querySelector('#app'), dialog=document.querySelector('#shark-dialog');
 const state={page:'home',index:0,answers:[],order:[],result:null,name:sessionStorage.getItem('sharkName')||'',completed:false,completionId:null,hover:null};
@@ -11,6 +12,7 @@ const state={page:'home',index:0,answers:[],order:[],result:null,name:sessionSto
 mountBubble(document.querySelector('#site-bubble'),{size:69,src:'assets/bubble.png',muted:true,ariaLabel:'Go to home page',onBurst:()=>setPage('home')});
 mountCursor();
 mountSound();
+mountOcean();
 
 const escape=(s='')=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -293,11 +295,13 @@ async function downloadCard(){
 }
 
 function drawField(ctx,x,y,width,height){
+ ctx.save();
  ctx.fillStyle='#fff2f2';
  ctx.fillRect(x,y,width,height);
  ctx.strokeStyle='#13375e';
  ctx.lineWidth=3;
  ctx.strokeRect(x,y,width,height);
+ ctx.restore();
 }
 
 function drawStar(ctx,x,y,r){
