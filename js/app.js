@@ -32,7 +32,7 @@ function render(){
 }
 
 function renderHome(){
- app.innerHTML=frame(`<h1 class="home-title">SHARK.ORG</h1><p class="home-lead">answer some questions and find a shark that matches you!</p><div class="home-row"><form class="home-copy" id="start-form"><label class="home-prompt" for="start-name">enter your name to get started!</label><div class="name-form"><input id="start-name" maxlength="24" autocomplete="given-name" placeholder="your name" value="${escape(state.name)}"/></div></form><img class="mascot" src="assets/mascot.png" alt="Pixel shark mascot"/></div>`);
+ app.innerHTML=frame(`<h1 class="home-title">WHATSHARKAMI.ORG</h1><p class="home-lead">answer some questions and find a shark that matches you!</p><div class="home-row"><form class="home-copy" id="start-form"><label class="home-prompt" for="start-name">enter your name to get started!</label><div class="name-form"><input id="start-name" maxlength="24" autocomplete="given-name" placeholder="your name" value="${escape(state.name)}"/></div></form><img class="mascot" src="assets/mascot.png" alt="Pixel shark mascot"/></div>`);
 
  const input=app.querySelector('#start-name');
 
@@ -457,3 +457,17 @@ document.addEventListener('keydown',e=>{
 const hash=location.hash.slice(1);
 if(['what','why','who','where'].includes(hash))state.page=hash;
 render();
+
+/* Translucent panels: remember each panel's original border paint and thickness
+   (the CSS then redraws it as a ring so the middle can be see-through). */
+function liftPanelRings() {
+  document.querySelectorAll('.panel:not([data-ring]):not(.panel--id)').forEach((p) => {
+    const cs = getComputedStyle(p);
+    p.style.setProperty('--ring-image', cs.backgroundImage);
+    p.style.setProperty('--ring-color', cs.backgroundColor);
+    p.style.setProperty('--ring', cs.paddingTop);
+    p.setAttribute('data-ring', '');
+  });
+}
+new MutationObserver(liftPanelRings).observe(document.body, { childList: true, subtree: true });
+liftPanelRings();

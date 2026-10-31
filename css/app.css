@@ -27,7 +27,7 @@
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 
 /* Match the exported Figma frames while preserving the original component styles. */
-.home-title{font-size:clamp(56px,7.3vw,112px);color:#35395d;margin:22px 0 0;letter-spacing:0;line-height:1.12}
+.home-title{font-size:clamp(40px,5vw,80px);color:#35395d;margin:22px 0 0;letter-spacing:0;line-height:1.12}
 .home-lead{font-size:clamp(18px,2vw,25px);color:#13375e}
 .home-row{margin-top:70px;grid-template-columns:1fr 300px;gap:28px;padding:0 56px}
 .home-copy{gap:34px}.home-prompt{font-size:clamp(19px,2.2vw,28px);color:#13375e}
@@ -212,4 +212,85 @@
   .id-card .id-title{position:static;grid-column:1/-1;margin:-8px 0 6px}
   .id-card .id-photo{width:min(260px,100%);margin:0 auto}
   .id-card .id-fields{padding-top:0}
+}
+
+
+/* ==========================================================
+   Home page name input - match Figma
+   A pastel gradient ring (outer + inner stepped corners) is drawn on the
+   wrapper's ::before; the input sits inside with a see-through fill clipped
+   to the same inner stepped shape.
+   ========================================================== */
+.name-form{position:relative}
+.name-form::before{
+  content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:linear-gradient(180deg,#dcf5cf 0%,#fadadf 38%,#c8e1f4 68%,#cfc2f7 100%);
+  clip-path:polygon(evenodd,
+    /* outer edge */
+    0 12px, 4px 12px, 4px 4px, 12px 4px, 12px 0,
+    calc(100% - 12px) 0, calc(100% - 12px) 4px, calc(100% - 4px) 4px, calc(100% - 4px) 12px, 100% 12px,
+    100% calc(100% - 12px), calc(100% - 4px) calc(100% - 12px), calc(100% - 4px) calc(100% - 4px), calc(100% - 12px) calc(100% - 4px), calc(100% - 12px) 100%,
+    12px 100%, 12px calc(100% - 4px), 4px calc(100% - 4px), 4px calc(100% - 12px), 0 calc(100% - 12px), 0 12px,
+    /* inner edge (outer shape inset by the 8px ring) */
+    8px 20px, 12px 20px, 12px 12px, 20px 12px, 20px 8px,
+    calc(100% - 20px) 8px, calc(100% - 20px) 12px, calc(100% - 12px) 12px, calc(100% - 12px) 20px, calc(100% - 8px) 20px,
+    calc(100% - 8px) calc(100% - 20px), calc(100% - 12px) calc(100% - 20px), calc(100% - 12px) calc(100% - 12px), calc(100% - 20px) calc(100% - 12px), calc(100% - 20px) calc(100% - 8px),
+    20px calc(100% - 8px), 20px calc(100% - 12px), 12px calc(100% - 12px), 12px calc(100% - 20px), 8px calc(100% - 20px), 8px 20px
+  );
+}
+.name-form input{
+  position:relative;z-index:1;display:block;box-sizing:border-box;
+  width:100%;height:76px;padding:0 28px;
+  border:0 !important;border-image:none !important;border-radius:0 !important;
+  background:rgba(208,210,220,.16) !important;
+  box-shadow:none;outline:none;
+  color:#13375e;text-align:center;font-size:clamp(20px,2vw,26px);
+  clip-path:polygon(
+    8px 20px, 12px 20px, 12px 12px, 20px 12px, 20px 8px,
+    calc(100% - 20px) 8px, calc(100% - 20px) 12px, calc(100% - 12px) 12px, calc(100% - 12px) 20px, calc(100% - 8px) 20px,
+    calc(100% - 8px) calc(100% - 20px), calc(100% - 12px) calc(100% - 20px), calc(100% - 12px) calc(100% - 12px), calc(100% - 20px) calc(100% - 12px), calc(100% - 20px) calc(100% - 8px),
+    20px calc(100% - 8px), 20px calc(100% - 12px), 12px calc(100% - 12px), 12px calc(100% - 20px), 8px calc(100% - 20px)
+  );
+}
+.name-form input::placeholder{color:#13375e;opacity:.72;text-align:center}
+/* clip-path would cut a normal outline, so show focus as an inner ring */
+.name-form input:focus,.name-form input:focus-visible{outline:none;box-shadow:inset 0 0 0 3px #13375e}
+@media(max-width:760px){.name-form input{height:64px}}
+
+
+/* ==========================================================
+   Translucent panels on every page (like the Figma design)
+   app.js copies each panel's original border colour/gradient and thickness
+   into --ring-image / --ring-color / --ring, then marks it data-ring.
+   The ring is redrawn on ::before so the middle can be see-through.
+   ========================================================== */
+.panel[data-ring]:not(.panel--id){
+  --cut:14px;                      /* inner pixel-corner size (same as .panel__inner clip-path) */
+  position:relative;
+  background:none !important;
+}
+.panel[data-ring]:not(.panel--id)::before{
+  content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
+  background-image:var(--ring-image,none);
+  background-color:var(--ring-color,transparent);
+  clip-path:polygon(evenodd,
+    0 0, 100% 0, 100% 100%, 0 100%, 0 0,
+    calc(var(--ring) + var(--cut)) var(--ring),
+    calc(100% - var(--ring) - var(--cut)) var(--ring),
+    calc(100% - var(--ring) - var(--cut)) calc(var(--ring) + var(--cut)),
+    calc(100% - var(--ring)) calc(var(--ring) + var(--cut)),
+    calc(100% - var(--ring)) calc(100% - var(--ring) - var(--cut)),
+    calc(100% - var(--ring) - var(--cut)) calc(100% - var(--ring) - var(--cut)),
+    calc(100% - var(--ring) - var(--cut)) calc(100% - var(--ring)),
+    calc(var(--ring) + var(--cut)) calc(100% - var(--ring)),
+    calc(var(--ring) + var(--cut)) calc(100% - var(--ring) - var(--cut)),
+    var(--ring) calc(100% - var(--ring) - var(--cut)),
+    var(--ring) calc(var(--ring) + var(--cut)),
+    calc(var(--ring) + var(--cut)) calc(var(--ring) + var(--cut)),
+    calc(var(--ring) + var(--cut)) var(--ring)
+  );
+}
+.panel[data-ring]:not(.panel--id) .panel__inner{
+  position:relative;z-index:1;
+  background:rgba(205,210,220,.58) !important;   /* lower .58 for more see-through */
 }
