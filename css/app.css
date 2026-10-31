@@ -51,20 +51,15 @@
 
 /* Quiz result reveal: a short scan followed by a stamped-in shark card. */
 .panel--scanning .panel__inner{justify-content:center}
-.scan-screen{width:min(620px,100%);min-height:480px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:var(--navy);gap:12px}
+.scan-screen{width:min(470px,100%);min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:var(--navy);gap:4px}
 .scan-kicker,.scan-foot{margin:0;font-size:14px;letter-spacing:.08em}
 .scan-title{margin:0;font-size:clamp(30px,5vw,48px);line-height:1.1;color:var(--title-ink)}
 .scan-copy{margin:0 0 8px;font-size:19px}
-.scan-card{position:relative;width:min(390px,85vw);aspect-ratio:1.6;border:5px solid var(--navy);background:var(--cream);padding:20px 24px;overflow:hidden;box-shadow:8px 8px 0 rgba(19,55,94,.2)}
-.scan-card__header{height:42px;display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid var(--navy);color:var(--navy)}
-.scan-card__header b{font-size:clamp(19px,4vw,28px);letter-spacing:.04em}
-.scan-card__header i{width:12px;height:12px;border-radius:50%;background:var(--lavender);border:2px solid var(--navy)}
-.scan-card__body{height:calc(100% - 42px);display:grid;grid-template-columns:1fr 1fr;align-content:center;gap:12px 16px;padding:18px 4px}
-.scan-card__body span{height:19px;border:2px solid var(--navy);background:#e5f0fb}
-.scan-card__body span:nth-child(3),.scan-card__body span:nth-child(4){height:30px;background:var(--mint)}
-.scan-card__body span:nth-child(5){grid-column:1/-1;width:76%;background:var(--pink)}
-.scan-beam{position:absolute;left:0;right:0;top:0;height:6px;background:#69c5ff;box-shadow:0 0 18px 7px rgba(75,180,255,.65);animation:scan-sweep 1.25s ease-in-out infinite alternate}
-.scan-progress{width:min(390px,85vw);height:14px;border:3px solid var(--navy);background:var(--cream);overflow:hidden}
+.scan-card{position:relative;width:min(420px,68vw);aspect-ratio:1200/770;overflow:hidden}
+.scan-card-preview{position:absolute;inset:0;display:grid;place-items:center}
+.scan-card-image{display:block;width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
+.scan-beam{position:absolute;left:6%;right:6%;top:9%;height:6px;background:#69c5ff;box-shadow:0 0 18px 7px rgba(75,180,255,.65);animation:scan-sweep 1.25s ease-in-out infinite alternate}
+.scan-progress{width:min(410px,66vw);height:10px;border:3px solid var(--navy);background:var(--cream);overflow:hidden}
 .scan-progress i{display:block;width:100%;height:100%;background:var(--mint);transform:scaleX(0);transform-origin:left;animation:scan-progress 2.1s linear forwards}
 .scan-foot{font-size:12px}
 .result-preview--stamp{transform-origin:center;animation:id-stamp 760ms cubic-bezier(.18,.82,.25,1.18) both;backface-visibility:hidden}
@@ -87,10 +82,10 @@
 .card-retake{margin:0;color:#fff!important}
 @media(max-width:1280px){.panel--id{width:min(1087px,100%)}}
 @media(max-width:760px){.panel--id .panel__inner{padding:18px 10px}.card-preview-img{max-height:none}.card-actions{flex-wrap:wrap;gap:14px}.card-pill-button{min-width:132px;padding:0 14px}.card-page-title{font-size:32px}}
-@keyframes scan-sweep{from{top:0}to{top:calc(100% - 6px)}}
+@keyframes scan-sweep{from{top:9%}to{top:91%}}
 @keyframes scan-progress{to{transform:scaleX(1)}}
 @keyframes id-stamp{0%{opacity:0;transform:translateY(-48px) scale(1.12) rotate(-3deg)}65%{opacity:1;transform:translateY(8px) scale(.98) rotate(.5deg)}100%{opacity:1;transform:translateY(0) scale(1) rotate(0)}}
-@media(max-width:760px){.scan-screen{min-height:400px}.scan-title{font-size:32px}.scan-card{padding:14px 16px}}
+@media(max-width:760px){.scan-card{width:72vw}.scan-progress{width:70vw}}
 
 
 

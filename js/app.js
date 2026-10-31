@@ -8,7 +8,6 @@ import { mountOcean } from './ocean.js';
 
 const app=document.querySelector('#app'), dialog=document.querySelector('#shark-dialog');
 const state={page:'home',index:0,answers:[],order:[],result:null,name:sessionStorage.getItem('sharkName')||'',completed:false,completionId:null,hover:null};
-const QUIZ_PROGRESS_KEY='sharkQuizProgress';
 let revealTimeout=null;
 
 mountBubble(document.querySelector('#site-bubble'),{size:69,src:'assets/bubble.png',muted:true,ariaLabel:'Go to home page',onBurst:()=>setPage('home')});
@@ -20,40 +19,9 @@ const escape=(s='')=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>
 
 function setPage(page){
  if(revealTimeout&&page!=='scanning'){clearTimeout(revealTimeout);revealTimeout=null;}
- state.page=page; history.replaceState(null,'',`#${page}`); saveQuizProgress(); render();
+ state.page=page; history.replaceState(null,'',`#${page}`); render();
 }
 function frame(inner,cls=''){return `<section class="panel ${cls}"><div class="panel__inner">${inner}</div></section>`;}
-
-function saveQuizProgress(){
- if(!['quiz','scanning','result','card'].includes(state.page))return;
- try{
-  localStorage.setItem(QUIZ_PROGRESS_KEY,JSON.stringify({
-   page:state.page,index:state.index,answers:state.answers,order:state.order,
-   name:state.name,result:state.result,completed:state.completed,completionId:state.completionId,
-  }));
- }catch(error){console.warn('Could not save quiz progress.',error);}
-}
-
-function restoreQuizProgress(){
- try{
-  const saved=JSON.parse(localStorage.getItem(QUIZ_PROGRESS_KEY)||'null');
-  if(!saved||!['quiz','scanning','result','card'].includes(saved.page)||!Number.isInteger(saved.index)||saved.index<0||saved.index>QUESTIONS.length||!Array.isArray(saved.answers)||saved.answers.length<saved.index)return false;
-  const answers=saved.answers.slice(0,QUESTIONS.length);
-  if(answers.some((answer,i)=>!Number.isInteger(answer)||answer<0||answer>=QUESTIONS[i].answers.length))return false;
-  const validSharks=new Set(Object.keys(SHARKS));
-  if(['result','card'].includes(saved.page)&&(!saved.result||!validSharks.has(saved.result.primary)||!validSharks.has(saved.result.secondary)))return false;
-  state.index=saved.index;state.answers=answers;state.order=Array.isArray(saved.order)?saved.order.filter(n=>Number.isInteger(n)&&n>=0&&n<4):[];
-  state.name=typeof saved.name==='string'?saved.name.slice(0,24):'';
-  state.result=saved.result||null;state.completed=Boolean(saved.completed);state.completionId=saved.completionId||null;
-  state.page=saved.page==='scanning'?'quiz':saved.page;
-  sessionStorage.setItem('sharkName',state.name);
-  return true;
- }catch(error){console.warn('Could not restore quiz progress.',error);return false;}
-}
-
-function hasSavedQuizProgress(){
- try{return Boolean(localStorage.getItem(QUIZ_PROGRESS_KEY));}catch(_){return false;}
-}
 
 function nav(){
  document.querySelectorAll('.nav__link').forEach(a=>{
@@ -74,8 +42,7 @@ function render(){
 }
 
 function renderHome(){
- const resume=hasSavedQuizProgress()?'<button class="text-button" data-action="resume-quiz">↻ RESUME YOUR QUIZ</button>':'';
- app.innerHTML=frame(`<h1 class="home-title">WHATSHARKAMI.ORG</h1><p class="home-lead">answer some questions and find a shark that matches you!</p><div class="home-row"><form class="home-copy" id="start-form"><label class="home-prompt" for="start-name">enter your name to get started!</label><div class="name-form"><input id="start-name" maxlength="24" autocomplete="given-name" placeholder="your name" value="${escape(state.name)}"/></div>${resume}</form><img class="mascot" src="assets/mascot.png" alt="Pixel shark mascot"/></div>`);
+ app.innerHTML=frame(`<h1 class="home-title">WHATSHARKAMI.ORG</h1><p class="home-lead">answer some questions and find a shark that matches you!</p><div class="home-row"><form class="home-copy" id="start-form"><label class="home-prompt" for="start-name">enter your name to get started!</label><div class="name-form"><input id="start-name" maxlength="24" autocomplete="given-name" placeholder="your name" value="${escape(state.name)}"/></div></form><img class="mascot" src="assets/mascot.png" alt="Pixel shark mascot"/></div>`);
 
  const input=app.querySelector('#start-name');
 
@@ -88,7 +55,6 @@ function renderHome(){
   e.preventDefault();
   state.name=input.value.trim().slice(0,24);
   sessionStorage.setItem('sharkName',state.name);
-  localStorage.removeItem(QUIZ_PROGRESS_KEY);
   state.index=0;
   state.answers=[];
   state.order=[];
@@ -96,8 +62,6 @@ function renderHome(){
   state.completionId=newQuizId();
   setPage('quiz');
  });
- const resumeButton=app.querySelector('[data-action="resume-quiz"]');
- if(resumeButton)resumeButton.onclick=()=>{if(restoreQuizProgress())setPage(state.page);};
 }
 
 function shuffle(){
@@ -117,7 +81,6 @@ function renderQuiz(){
  }
 
  if(!state.order.length)state.order=shuffle();
- saveQuizProgress();
 
  app.innerHTML=frame(`<h1 class="quiz-head">MAKE YOUR CHOICES</h1><div class="progress"><span>QUESTION ${state.index+1} OF 10</span><div class="segments" role="progressbar" aria-valuemin="0" aria-valuemax="10" aria-valuenow="${state.index+1}" aria-label="Question ${state.index+1} of 10">${QUESTIONS.map((_,i)=>`<i class="${i<=state.index?'is-on':''}"></i>`).join('')}</div></div><h2 class="question" id="question-text">${escape(q.text)}</h2><div class="answers" role="group" aria-labelledby="question-text">${state.order.map((n,i)=>`<button class="answer" data-answer="${n}"><b>${'ABCD'[i]}</b><span>${escape(q.answers[n].text)}</span></button>`).join('')}</div><div class="quiz-controls"><button class="text-button" data-action="back">← BACK</button><button class="text-button" data-action="restart">START OVER</button></div>`,'panel--quiz');
 
@@ -125,7 +88,6 @@ function renderQuiz(){
   state.answers[state.index]=Number(b.dataset.answer);
   state.index++;
   state.order=[];
-  saveQuizProgress();
   render();
  });
 
@@ -134,8 +96,6 @@ function renderQuiz(){
   if(state.index){
    state.index--;
    state.order=[];
-   state.answers.length=state.index;
-   saveQuizProgress();
    render();
   }else setPage('home');
  };
@@ -147,7 +107,6 @@ function beginReveal(){
  state.result=scoreAnswers(state.answers);
  state.page='scanning';
  countCompletion();
- saveQuizProgress();
  renderScanning();
  const duration=window.matchMedia('(prefers-reduced-motion: reduce)').matches?250:2100;
  revealTimeout=window.setTimeout(()=>{
@@ -156,8 +115,15 @@ function beginReveal(){
  },duration);
 }
 
-function renderScanning(){
- app.innerHTML=frame(`<div class="scan-screen" role="status" aria-live="polite"><p class="scan-kicker">MATCH SYSTEM · FINAL CHECK</p><h1 class="scan-title">SCANNING YOUR ANSWERS</h1><p class="scan-copy">finding the shark that fits you best...</p><div class="scan-card" aria-hidden="true"><div class="scan-card__header"><i></i><b>SHARK ID</b><i></i></div><div class="scan-card__body"><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="scan-beam"></div></div><div class="scan-progress" aria-hidden="true"><i></i></div><p class="scan-foot">PREPARING YOUR SHARK ID</p></div>`,'panel--scanning');
+async function renderScanning(){
+ app.innerHTML=frame(`<div class="scan-screen" role="status" aria-label="Preparing your Shark ID"><div class="scan-card" aria-hidden="true"><div class="scan-card-preview"></div><div class="scan-beam"></div></div><div class="scan-progress" aria-hidden="true"><i></i></div></div>`,'panel--scanning');
+ const slot=app.querySelector('.scan-card-preview');
+ try{
+  const card=await createSharkCardCanvas({template:true});
+  if(!slot?.isConnected||state.page!=='scanning')return;
+  card.className='scan-card-image';
+  slot.replaceChildren(card);
+ }catch(error){console.error('Could not render the Shark ID scan preview.',error);}
 }
 
 function restart(){
@@ -169,7 +135,6 @@ function restart(){
  state.completed=false;
  state.completionId=newQuizId();
  state.page='quiz';
- saveQuizProgress();
  render();
 }
 
@@ -250,7 +215,6 @@ function renderResult(){
  app.querySelector('#visitor-name').oninput=e=>{
   state.name=e.target.value.slice(0,24);
   sessionStorage.setItem('sharkName',state.name);
-  saveQuizProgress();
  };
 
  app.querySelector('[data-action="make-card"]').onclick=()=>{
@@ -279,7 +243,7 @@ async function renderCard(){
  if(slot?.isConnected)slot.replaceChildren(image);
 }
 
-async function createSharkCardCanvas(){
+async function createSharkCardCanvas({template=false}={}){
  await document.fonts.ready;
  const canvas=document.createElement('canvas');
  canvas.width=1200;
@@ -319,21 +283,22 @@ async function createSharkCardCanvas(){
  ctx.textAlign='left';ctx.fillStyle=navy;ctx.font='15px Pixelify Sans';
  ctx.fillText('NAME',132,401);ctx.fillText('YOUR SHARK',424,401);
  drawCardField(ctx,132,412,275,46,navy,cream);drawCardField(ctx,424,412,275,46,navy,cream);
- ctx.font='20px Pixelify Sans';fitText(ctx,state.name,147,442,245);
- fitText(ctx,s.name,439,442,245);
+ ctx.font='20px Pixelify Sans';
+ if(template){ctx.fillStyle='#8796ab';ctx.fillText('Type name here',147,442);}
+ else fitText(ctx,state.name,147,442,245);
+ if(!template)fitText(ctx,s.name,439,442,245);
  ctx.font='15px Pixelify Sans';ctx.fillText('PERSONALITY TRAITS',132,487);
  const traitColors=['#bdf0cf','#f7c6dc','#cfc2f7'];
  s.traits.forEach((trait,i)=>{
   const x=132+i*190;
   ctx.fillStyle=traitColors[i%traitColors.length];ctx.fillRect(x,500,176,42);
   ctx.strokeStyle=navy;ctx.lineWidth=3;ctx.strokeRect(x,500,176,42);
-  ctx.textAlign='center';ctx.font='19px Pixelify Sans';ctx.fillStyle=navy;
-  fitText(ctx,trait,x+88,527,160);
+  if(!template){ctx.textAlign='center';ctx.font='19px Pixelify Sans';ctx.fillStyle=navy;fitText(ctx,trait,x+88,527,160);}
  });
 
  ctx.textAlign='left';ctx.fillStyle=navy;ctx.font='15px Pixelify Sans';ctx.fillText('ABOUT THE SHARK',132,575);
  drawCardField(ctx,132,585,567,60,navy,cream);
- ctx.font='14px Pixelify Sans';wrapText(ctx,s.about,146,608,540,17,2);
+ if(!template){ctx.font='14px Pixelify Sans';wrapText(ctx,s.about,146,608,540,17,2);}
 
  // Portrait and barcode.
  const portrait={x:745,y:218,w:300,h:300};
@@ -341,17 +306,19 @@ async function createSharkCardCanvas(){
  ctx.strokeStyle=navy;ctx.lineWidth=5;ctx.strokeRect(portrait.x,portrait.y,portrait.w,portrait.h);
  ctx.clearRect(portrait.x+10,portrait.y+10,portrait.w-20,portrait.h-20);
  ctx.fillStyle='rgba(189,221,247,.58)';ctx.fillRect(portrait.x+10,portrait.y+10,portrait.w-20,portrait.h-20);
- try{
-  const img=new Image();
-  img.src=s.image;
-  await img.decode();
-  const inset=20,scale=Math.min((portrait.w-inset*2)/img.width,(portrait.h-inset*2)/img.height);
-  const w=img.width*scale,h=img.height*scale;
-  ctx.drawImage(img,portrait.x+(portrait.w-w)/2,portrait.y+(portrait.h-h)/2,w,h);
- }catch{}
+ if(!template){
+  try{
+   const img=new Image();
+   img.src=s.image;
+   await img.decode();
+   const inset=20,scale=Math.min((portrait.w-inset*2)/img.width,(portrait.h-inset*2)/img.height);
+   const w=img.width*scale,h=img.height*scale;
+   ctx.drawImage(img,portrait.x+(portrait.w-w)/2,portrait.y+(portrait.h-h)/2,w,h);
+  }catch{}
+ }
  ctx.textAlign='left';ctx.fillStyle=navy;ctx.font='12px Pixelify Sans';
- ctx.fillText(`MEMBER ID NO. ${s.id.toUpperCase()}-${String(state.name.length+14).padStart(3,'0')}`,745,544);
- drawBarcode(ctx,745,554,300,42,`${state.name}-${s.id}`);
+ ctx.fillText(template?'MEMBER ID NO. 00000-014':`MEMBER ID NO. ${s.id.toUpperCase()}-${String(state.name.length+14).padStart(3,'0')}`,745,544);
+ drawBarcode(ctx,745,554,300,42,template?'00000-014':`${state.name}-${s.id}`);
 
  ctx.save();steppedRect(ctx,card.x+22,card.y+22,card.w-44,card.h-44,16);ctx.clip();
  ctx.fillStyle=navy;ctx.fillRect(card.x,footerY,card.w,card.y+card.h-footerY);ctx.restore();
@@ -567,16 +534,12 @@ document.addEventListener('keydown',e=>{
  if(e.altKey&&e.key==='ArrowLeft'&&state.index>0){
   state.index--;
   state.order=[];
-  state.answers.length=state.index;
-  saveQuizProgress();
   renderQuiz();
  }
 });
 
 const hash=location.hash.slice(1);
 if(['what','why','who','where'].includes(hash))state.page=hash;
-else if(hash==='home')state.page='home';
-else if(!restoreQuizProgress()&&hash==='quiz')state.page='quiz';
 render();
 
 /* Pixel-stepped corners: remember each box's original border paint and width
