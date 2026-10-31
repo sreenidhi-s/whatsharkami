@@ -127,7 +127,9 @@ export function mountBubble(host, props = {}) {
     bursting = true;
     btn.disabled = true;
     btn.classList.add('is-bursting', 'is-swelling');
-    document.dispatchEvent(new CustomEvent('bubble-burst'));
+    document.dispatchEvent(new CustomEvent('bubble-burst', {
+      detail: { source: host.id === 'site-bubble' ? 'home' : 'ambient' },
+    }));
     props.onBurst?.();
     playPop(props.muted ?? true);
 

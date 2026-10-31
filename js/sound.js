@@ -1,5 +1,5 @@
 /**
- * 8-bit sound effects, synthesised with the Web Audio API (no audio files).
+ * 8-bit interaction sound effects plus aquarium background music.
  * - Plays after the visitor's first click/tap (browser rule).
  * - Mute button (bottom-left); the choice is remembered.
  * - Most sounds are wired up automatically by listening to clicks, hovers,
@@ -88,11 +88,6 @@ const SOUNDS = {
     tone(c, { f, f2: f * 1.7, d: 0.1, type: 'sine', v: 0.32 });
     tone(c, { f: f * 2, f2: f * 3, t: 0.015, d: 0.05, type: 'triangle', v: 0.05 });
   },
-  // bubble popped on the ocean background
-  pop: (c) => {
-    tone(c, { f: 700, f2: 1500, d: 0.05, type: 'sine', v: 0.5 });
-    tone(c, { f: 1800, f2: 900, t: 0.03, d: 0.045, type: 'triangle', v: 0.16 });
-  },
   // soft typing tick, slightly different each time; arg 'delete' for backspace
   key: (c, kind) => {
     const f = kind === 'delete' ? 520 : 760 + Math.random() * 160;
@@ -134,114 +129,36 @@ const SOUNDS = {
   },
 };
 
+const BUBBLE_POP_SOUND = new URL('../assets/home-bubble-pop.mp3', import.meta.url);
 
-/* ---------- ocean ambience (background "music") ---------- */
 
-const AMBIENT_VOLUME = 0.5; // 0 - 1, loudness of the ocean loop (the mute button silences it too)
-let ambBus = null;
+/* ---------- aquarium background music ---------- */
+
+const AMBIENT_VOLUME = 0.32;
+let music = null;
 let ambStarted = false;
-let brownBuf = null;
 
-function whiteNoise(c) {
-  if (!noiseBuf) {
-    noiseBuf = c.createBuffer(1, c.sampleRate, c.sampleRate);
-    const data = noiseBuf.getChannelData(0);
-    for (let i = 0; i < data.length; i += 1) data[i] = Math.random() * 2 - 1;
-  }
-  return noiseBuf;
-}
-
-function brownNoise(c) {
-  if (!brownBuf) {
-    brownBuf = c.createBuffer(1, c.sampleRate * 4, c.sampleRate);
-    const data = brownBuf.getChannelData(0);
-    let last = 0;
-    for (let i = 0; i < data.length; i += 1) {
-      last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02;
-      data[i] = last * 3.5;
-    }
-  }
-  return brownBuf;
-}
-
-function startAmbience(c) {
+function startAmbience() {
   if (ambStarted || muted) return;
   ambStarted = true;
-  ambBus = c.createGain();
-  ambBus.gain.value = 0;
-  ambBus.connect(master);
-  ambBus.gain.setTargetAtTime(AMBIENT_VOLUME, c.currentTime, 2.5); // slow fade-in
-
-  // gentle waves: filtered noise whose loudness and brightness swell slowly
-  const waves = c.createBufferSource();
-  waves.buffer = whiteNoise(c);
-  waves.loop = true;
-  const wf = c.createBiquadFilter();
-  wf.type = 'lowpass';
-  wf.frequency.value = 520;
-  wf.Q.value = 0.4;
-  const wg = c.createGain();
-  wg.gain.value = 0.9;
-  waves.connect(wf).connect(wg).connect(ambBus);
-  const swell = c.createOscillator();
-  swell.frequency.value = 0.11; // ~9 second swell
-  const swellDepth = c.createGain();
-  swellDepth.gain.value = 0.7;
-  swell.connect(swellDepth).connect(wg.gain);
-  const bright = c.createOscillator();
-  bright.frequency.value = 0.083;
-  const brightDepth = c.createGain();
-  brightDepth.gain.value = 280;
-  bright.connect(brightDepth).connect(wf.frequency);
-
-  // deep water rumble
-  const rumble = c.createBufferSource();
-  rumble.buffer = brownNoise(c);
-  rumble.loop = true;
-  const rf = c.createBiquadFilter();
-  rf.type = 'lowpass';
-  rf.frequency.value = 160;
-  const rg = c.createGain();
-  rg.gain.value = 0.6;
-  rumble.connect(rf).connect(rg).connect(ambBus);
-
-  // very soft underwater pad
-  const padTrem = c.createOscillator();
-  padTrem.frequency.value = 0.05;
-  const padDepth = c.createGain();
-  padDepth.gain.value = 0.03;
-  [98, 146.83, 196].forEach((f, i) => {
-    const o = c.createOscillator();
-    o.type = 'sine';
-    o.frequency.value = f;
-    o.detune.value = i * 4;
-    const g = c.createGain();
-    g.gain.value = 0.05;
-    padTrem.connect(padDepth);
-    padDepth.connect(g.gain);
-    o.connect(g).connect(ambBus);
-    o.start();
+  music = new Audio(new URL("../assets/aquarium-fish.mp3", import.meta.url));
+  music.loop = true;
+  music.preload = "auto";
+  music.volume = AMBIENT_VOLUME;
+  music.play().catch(() => {
+    // Browsers may still require another gesture before starting audio.
+    ambStarted = false;
   });
-
-  [waves, swell, bright, rumble, padTrem].forEach((n) => n.start());
-
-  // now and then a faraway bubble
-  const blip = () => {
-    window.setTimeout(() => {
-      if (!muted && !document.hidden && ctx && ctx.state === 'running') {
-        const f = 500 + Math.random() * 900;
-        tone(ctx, { f, f2: f * 1.6, d: 0.1, type: 'sine', v: 0.5, out: ambBus });
-      }
-      blip();
-    }, 3000 + Math.random() * 6000);
-  };
-  blip();
 }
 
-/** Start, fade in or fade out the ocean loop to match the mute state / tab visibility. */
+/** Keep background music in sync with mute and tab visibility. */
 function syncAmbience() {
-  if (!ambBus || !ctx) return;
-  ambBus.gain.setTargetAtTime(muted || document.hidden ? 0 : AMBIENT_VOLUME, ctx.currentTime, 0.4);
+  if (!music) return;
+  if (muted || document.hidden) {
+    music.pause();
+    return;
+  }
+  music.play().catch(() => {});
 }
 
 function kickAmbience() {
@@ -251,8 +168,8 @@ function kickAmbience() {
   }
   const c = ensureContext();
   if (!c) return;
-  const go = () => (ambStarted ? syncAmbience() : startAmbience(c));
-  if (c.state === 'running') go();
+  const go = () => (ambStarted ? syncAmbience() : startAmbience());
+  if (c.state === "running") go();
   else c.resume().then(go).catch(() => {});
 }
 
@@ -260,7 +177,14 @@ function kickAmbience() {
 
 /** Play a named sound. `arg` is passed to the sound (e.g. answer index). */
 export function playSound(name, arg) {
-  if (muted || !SOUNDS[name]) return;
+  if (muted) return;
+  if (name === 'pop') {
+    const clip = new Audio(BUBBLE_POP_SOUND);
+    clip.volume = 0.65;
+    clip.play().catch(() => {});
+    return;
+  }
+  if (!SOUNDS[name]) return;
   const c = ensureContext();
   if (!c) return;
   if (c.state === 'running') {
@@ -323,7 +247,7 @@ function mountToggle() {
 export function mountSound() {
   mountToggle();
 
-  // the ocean loop can only start after the visitor's first click, tap or key press
+  // background music starts after the visitor's first click, tap or key press
   const firstGesture = () => {
     document.removeEventListener('pointerdown', firstGesture, true);
     document.removeEventListener('keydown', firstGesture, true);
@@ -395,7 +319,9 @@ export function mountSound() {
   });
 
   // bubble pop
-  document.addEventListener('bubble-burst', () => playSound('bloop'));
+  document.addEventListener('bubble-burst', (event) => {
+    playSound('pop');
+  });
 
   // shark popup opening / closing
   const dialog = document.querySelector('#shark-dialog');

@@ -106,10 +106,21 @@ export function mountOcean() {
     playSound('pop');
   };
 
+  /* ---------- cards hide the ocean behind them ---------- */
+  // Anything floating behind a card can't be seen or touched. It keeps moving
+  // and shows up again on the other side. (The ID card's wrapper panel is
+  // transparent, so the card itself is used there.)
+  const CARDS = '.panel:not(.panel--id), .id-card';
+  const OFF = { x: -9999, y: -9999 };
+  const cardRects = () => Array.from(document.querySelectorAll(CARDS), (el) => el.getBoundingClientRect())
+    .filter((r) => r.width > 0 && r.height > 0);
+  const inCards = (rects, x, y) => rects.some((r) => x >= r.left && x <= r.right && y >= r.top && y <= r.bottom);
+
   /* ---------- update ---------- */
   const damp = (v, k, dt) => v * Math.max(0, 1 - k * dt);
 
-  const update = (dt) => {
+  const update = (dt, rects) => {
+    const pt = inCards(rects, cur.x, cur.y) ? OFF : cur; // cursor on a card: nothing flees
     bubbles.forEach((b) => {
       if (!b.alive) {
         if (t >= b.respawnAt) Object.assign(b, newBubble(true));
@@ -122,10 +133,10 @@ export function mountOcean() {
       }
       if (b.shy && !reduced) {
         const p = bubblePos(b);
-        const dx = p.x - cur.x;
-        const dy = p.y - cur.y;
+        const dx = p.x - pt.x;
+        const dy = p.y - pt.y;
         const d = Math.hypot(dx, dy);
-        if (d < 130 && d > 0.1) {
+        if (d < 130 && d > 0.1 && !inCards(rects, p.x, p.y)) {
           const k = (1 - d / 130) * 420 * dt;
           b.ovx += (dx / d) * k;
           b.ovy += (dy / d) * k;
@@ -141,10 +152,10 @@ export function mountOcean() {
 
     fish.forEach((f, i) => {
       const y = f.by + Math.sin(t * 1.6 + f.phase) * S * 1.2;
-      const dx = f.x - cur.x;
-      const dy = y - cur.y;
+      const dx = f.x - pt.x;
+      const dy = y - pt.y;
       const d = Math.hypot(dx, dy);
-      if (d < 150 && d > 0.1) {
+      if (d < 150 && d > 0.1 && !inCards(rects, f.x, y)) {
         const k = (1 - d / 150) * 320 * dt;
         f.vxE += (dx / d) * k;
         f.vyE += (dy / d) * k;
@@ -169,8 +180,21 @@ export function mountOcean() {
   };
 
   /* ---------- draw ---------- */
-  const draw = () => {
+  const draw = (rects) => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // paint everywhere except inside the cards (whole canvas pixels keep edges crisp)
+    ctx.save();
+    if (rects.length) {
+      ctx.beginPath();
+      ctx.rect(0, 0, canvas.width, canvas.height);
+      rects.forEach((r) => {
+        const x0 = Math.round(r.left / S);
+        const y0 = Math.round(r.top / S);
+        ctx.rect(x0, y0, Math.round(r.right / S) - x0, Math.round(r.bottom / S) - y0);
+      });
+      ctx.clip('evenodd');
+    }
 
     // bubbles: pixel ring + a highlight pixel
     ctx.globalAlpha = 0.7;
@@ -216,6 +240,7 @@ export function mountOcean() {
       ctx.fillRect(Math.round(p.x / S), Math.round(p.y / S), 1, 1);
     });
     ctx.globalAlpha = 1;
+    ctx.restore();
   };
 
   /* ---------- loop ---------- */
@@ -227,8 +252,9 @@ export function mountOcean() {
     const dt = Math.min(0.1, (now - last) / 1000);
     last = now;
     t = now / 1000;
-    update(dt);
-    draw();
+    const rects = cardRects();
+    update(dt, rects);
+    draw(rects);
   };
   raf = requestAnimationFrame(frame);
 
@@ -252,6 +278,7 @@ export function mountOcean() {
   };
   const onDown = (e) => {
     if (e.target.closest && e.target.closest(INTERACTIVE)) return;
+    if (inCards(cardRects(), e.clientX, e.clientY)) return; // behind a card: can't be reached
     let best = null;
     let bestD = Infinity;
     bubbles.forEach((b) => {
