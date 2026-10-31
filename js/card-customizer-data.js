@@ -6,6 +6,8 @@ export const CARD_CUSTOMIZER_DATA = {
     { id: 'pink', label: 'Pink', border: '#F7C6DC', text: '#825C6C', tint: '#FDEAF2' },
     { id: 'lavender', label: 'Lavender', border: '#CFC2F7', text: '#35395D', tint: '#EEE9FB' },
     { id: 'tangerine', label: 'Tangerine', border: '#FFAE5C', text: '#583B2A', tint: '#FFF0DD' },
+    { id: 'sea-glass', label: 'Sea Glass', border: '#BDF0CF', borderEnd: '#CFC2F7', swatch: 'linear-gradient(180deg, #BDF0CF 0%, #CFC2F7 100%)', text: '#35395D', tint: '#A9DDE5' },
+    { id: 'coral-reef', label: 'Coral Reef', border: '#FF9F91', text: '#693F55', tint: '#FFF0E7' },
   ],
   borders: [
     { id: 'star', label: 'Star' },

@@ -87,10 +87,28 @@ export function mountOcean() {
     };
   };
 
-  const bubbleCount = window.innerWidth < 760 ? 9 : 16;
-  const fishCount = reduced ? 0 : window.innerWidth < 760 ? 4 : 7;
-  for (let i = 0; i < bubbleCount; i += 1) bubbles.push(newBubble(false));
-  for (let i = 0; i < fishCount; i += 1) fish.push(newFish(true));
+  const bubbleCount = window.innerWidth < 760 ? 12 : 20;
+  const fishCount = reduced ? 0 : window.innerWidth < 760 ? 5 : 9;
+  const bubbleColumns = Math.ceil(Math.sqrt(bubbleCount * W / Math.max(H, 1)));
+  const bubbleRows = Math.ceil(bubbleCount / bubbleColumns);
+  for (let i = 0; i < bubbleCount; i += 1) {
+    const bubble = newBubble(false);
+    const col = i % bubbleColumns;
+    const row = Math.floor(i / bubbleColumns);
+    bubble.bx = ((col + 0.5 + rand(-0.22, 0.22)) / bubbleColumns) * W;
+    bubble.by = ((row + 0.5 + rand(-0.2, 0.2)) / bubbleRows) * H;
+    bubbles.push(bubble);
+  }
+  const fishColumns = Math.ceil(Math.sqrt(fishCount * W / Math.max(H, 1)));
+  const fishRows = Math.ceil(fishCount / fishColumns);
+  for (let i = 0; i < fishCount; i += 1) {
+    const swimmer = newFish(true);
+    const col = i % fishColumns;
+    const row = Math.floor(i / fishColumns);
+    swimmer.x = ((col + 0.5 + rand(-0.2, 0.2)) / fishColumns) * W;
+    swimmer.by = ((row + 0.5 + rand(-0.18, 0.18)) / fishRows) * H;
+    fish.push(swimmer);
+  }
 
   /* ---------- pop particles ---------- */
   const bits = [];
@@ -197,7 +215,7 @@ export function mountOcean() {
     }
 
     // bubbles: pixel ring + a highlight pixel
-    ctx.globalAlpha = 0.7;
+    ctx.globalAlpha = 0.55;
     bubbles.forEach((b) => {
       if (!b.alive) return;
       const p = bubblePos(b);
@@ -215,7 +233,7 @@ export function mountOcean() {
     });
 
     // fish
-    ctx.globalAlpha = 0.8;
+    ctx.globalAlpha = 0.65;
     fish.forEach((f) => {
       const sprite = SPRITES[f.type];
       const w = sprite[0].length;

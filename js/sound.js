@@ -91,7 +91,7 @@ const SOUNDS = {
   // soft typing tick, slightly different each time; arg 'delete' for backspace
   key: (c, kind) => {
     const f = kind === 'delete' ? 520 : 760 + Math.random() * 160;
-    tone(c, { f, f2: f * 0.8, d: 0.035, type: 'triangle', v: 0.09 });
+    tone(c, { f, f2: f * 0.8, d: 0.035, type: 'triangle', v: 0.15 });
   },
   tick: (c) => tone(c, { f: 1400, d: 0.025, type: 'triangle', v: 0.035 }),
   click: (c) => tone(c, { f: 520, f2: 700, d: 0.06, v: 0.1 }),
@@ -307,15 +307,25 @@ export function mountSound() {
     }
   });
 
-  // soft typing sound in text boxes (name fields)
+  // soft typing sound while text is entered or edited
   let lastKey = 0;
+  const isTextEditor = (t) => {
+    const isTextInput = t instanceof HTMLInputElement && !['button', 'checkbox', 'color', 'file', 'hidden', 'image', 'radio', 'range', 'reset', 'submit'].includes(t.type);
+    return isTextInput || t instanceof HTMLTextAreaElement || Boolean(t?.isContentEditable);
+  };
+  const playTypingKey = (kind) => {
+    const now = performance.now();
+    if (now - lastKey < 30) return;
+    lastKey = now;
+    playSound('key', kind);
+  };
+  document.addEventListener('keydown', (e) => {
+    if (isTextEditor(e.target) && (e.key === 'Backspace' || e.key === 'Delete')) playTypingKey('delete');
+  });
   document.addEventListener('input', (e) => {
     const t = e.target;
-    if (!(t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement)) return;
-    const now = performance.now();
-    if (now - lastKey < 35) return;
-    lastKey = now;
-    playSound('key', e.inputType && e.inputType.startsWith('delete') ? 'delete' : 'type');
+    if (!isTextEditor(t)) return;
+    playTypingKey(e.inputType && e.inputType.startsWith('delete') ? 'delete' : 'type');
   });
 
   // bubble pop

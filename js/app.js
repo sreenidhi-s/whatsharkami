@@ -246,11 +246,11 @@ function renderCustomizerPanel(){
  const tab=state.customization.activeTab;
  const tabButton=(id,label)=>`<button type="button" role="tab" id="custom-tab-${id}" aria-selected="${tab===id}" aria-controls="custom-panel-${id}" data-custom-tab="${id}">${label}</button>`;
  const panels={
-  color:`<div class="customizer-swatches">${CARD_CUSTOMIZER_DATA.themes.map(item=>`<button type="button" class="theme-swatch ${theme.id===item.id?'is-selected':''}" data-theme="${item.id}" aria-label="${item.label} theme" aria-pressed="${theme.id===item.id}" style="--swatch:${item.border}"><span></span><b>${item.label}</b></button>`).join('')}</div>`,
+  color:`<div class="customizer-swatches">${CARD_CUSTOMIZER_DATA.themes.map(item=>`<button type="button" class="theme-swatch ${theme.id===item.id?'is-selected':''}" data-theme="${item.id}" aria-label="${item.label} theme" aria-pressed="${theme.id===item.id}" style="--swatch:${item.swatch||item.border}"><span></span><b>${item.label}</b></button>`).join('')}</div>`,
   border:`<div class="customizer-shapes">${CARD_CUSTOMIZER_DATA.borders.map(item=>`<button type="button" class="shape-choice ${state.customization.border===item.id?'is-selected':''}" data-border="${item.id}" aria-label="Use ${item.label} border" aria-pressed="${state.customization.border===item.id}"><span class="shape-mask" data-asset="assets/borders/border-${item.id}.png" style="--mask-color:${theme.border}"><canvas width="40" height="40" aria-hidden="true"></canvas><span class="asset-placeholder">${item.label}</span></span><b>${item.label}</b></button>`).join('')}</div>`,
-  stickers:`<div class="customizer-stickers">${CARD_CUSTOMIZER_DATA.stickers.map(item=>`<button type="button" class="sticker-choice" data-sticker="${item.id}" aria-label="Add ${item.label} sticker" ${state.customization.stickers.length>=6?'disabled':''}><span class="sticker-thumb" data-asset="assets/stickers/sticker-${item.id}.png" style="--sticker-color:${item.color}"><img src="assets/stickers/sticker-${item.id}.png" alt="" draggable="false"/><span class="asset-placeholder">${item.label}</span></span><b>${item.label}</b></button>`).join('')}</div><p class="sticker-limit" aria-live="polite">${state.customization.stickers.length} of 6 stickers</p>`,
+  stickers:`<p class="sticker-limit" aria-live="polite">Choose a sticker to add · ${state.customization.stickers.length}/6</p><div class="customizer-stickers">${CARD_CUSTOMIZER_DATA.stickers.map(item=>`<button type="button" class="sticker-choice" data-sticker="${item.id}" aria-label="Add ${item.label} sticker" ${state.customization.stickers.length>=6?'disabled':''}><span class="sticker-thumb" data-asset="assets/stickers/sticker-${item.id}.png" style="--sticker-color:${item.color}"><img src="assets/stickers/sticker-${item.id}.png" alt="" draggable="false"/><span class="asset-placeholder">${item.label}</span></span><b>${item.label}</b></button>`).join('')}</div><div class="sticker-edit-controls" role="group" aria-label="Selected sticker controls"><button type="button" data-sticker-edit="smaller" aria-label="Make selected sticker smaller" ${state.customization.selectedSticker?'':'disabled'}>−</button><button type="button" data-sticker-edit="larger" aria-label="Make selected sticker larger" ${state.customization.selectedSticker?'':'disabled'}>+</button><button type="button" data-sticker-edit="delete" aria-label="Delete selected sticker" ${state.customization.selectedSticker?'':'disabled'}>Delete</button></div>`,
  };
- return `<aside class="card-customizer" aria-label="Shark ID customization"><div class="customizer-heading"><button type="button" class="customizer-reset" data-custom-reset aria-label="Reset card customizations">Reset</button></div><div class="customizer-tabs" role="tablist" aria-label="Card customization options">${tabButton('color','Color')}${tabButton('border','Border shape')}${tabButton('stickers','Stickers')}</div><section class="customizer-panel" id="custom-panel-${tab}" role="tabpanel" aria-labelledby="custom-tab-${tab}">${panels[tab]||panels.color}</section></aside>`;
+ return `<aside class="card-customizer" aria-label="Shark ID customization"><div class="customizer-heading"><h2>Customize your ID</h2><button type="button" class="customizer-reset" data-custom-reset aria-label="Reset card customizations">Reset</button></div><div class="customizer-tabs" role="tablist" aria-label="Card customization options">${tabButton('color','Color')}${tabButton('border','Border shape')}${tabButton('stickers','Stickers')}</div><section class="customizer-panel" id="custom-panel-${tab}" role="tabpanel" aria-labelledby="custom-tab-${tab}">${panels[tab]||panels.color}</section></aside>`;
 }
 
 function bindCustomizerControls(){
@@ -269,6 +269,12 @@ function bindCustomizerControls(){
   state.customization.border=button.dataset.border;renderCustomizer();refreshCardPreview();
  });
  app.querySelectorAll('[data-sticker]').forEach(button=>button.onclick=()=>addSticker(button.dataset.sticker));
+ app.querySelectorAll('[data-sticker-edit]').forEach(button=>button.onclick=()=>{
+  const item=selectedSticker();if(!item)return;
+  if(button.dataset.stickerEdit==='smaller')resizeSelectedSticker(-24);
+  else if(button.dataset.stickerEdit==='larger')resizeSelectedSticker(24);
+  else deleteSelectedSticker();
+ });
  app.querySelector('[data-custom-reset]').onclick=()=>{
   state.customization={theme:'navy',border:'star',stickers:[],activeTab:'color',selectedSticker:null};
   renderCustomizer();refreshCardPreview();
@@ -318,13 +324,14 @@ function describeStickerFocus(){
  const active=document.activeElement;
  if(active?.dataset?.stickerMove)return{type:'move',value:active.dataset.stickerMove};
  if(active?.dataset?.stickerSize)return{type:'size',value:active.dataset.stickerSize};
+ if(active?.dataset?.stickerEdit)return{type:'edit',value:active.dataset.stickerEdit};
  if(active?.dataset?.placement)return{type:'placement',value:active.dataset.placement};
  return null;
 }
 function restoreStickerFocus(focus,id){
  if(!focus)return;
  requestAnimationFrame(()=>{
-  const selector=focus.type==='move'?`[data-sticker-move="${focus.value}"]`:focus.type==='size'?`[data-sticker-size="${focus.value}"]`:`[data-placement="${id}"]`;
+  const selector=focus.type==='move'?`[data-sticker-move="${focus.value}"]`:focus.type==='size'?`[data-sticker-size="${focus.value}"]`:focus.type==='edit'?`[data-sticker-edit="${focus.value}"]`:`[data-placement="${id}"]`;
   app.querySelector(selector)?.focus();
  });
 }
@@ -338,6 +345,7 @@ function deleteSelectedSticker(){
  const item=selectedSticker();if(!item)return;
  state.customization.stickers=state.customization.stickers.filter(sticker=>sticker!==item);state.customization.selectedSticker=null;
  renderStickerLayer();renderCustomizer();refreshCardPreview();
+ requestAnimationFrame(()=>app.querySelector('[data-custom-tab="stickers"]')?.focus());
 }
 
 async function refreshCardPreview(animate=false){
@@ -357,7 +365,7 @@ function renderStickerLayer(){
  layer.innerHTML=state.customization.stickers.map(item=>{
   const sticker=CARD_CUSTOMIZER_DATA.stickers.find(entry=>entry.id===item.kind)||{label:item.kind,color:'#CFC2F7'};
   const selected=state.customization.selectedSticker===item.id;
-  return `<div class="placed-sticker-group" data-sticker-group="${item.id}" style="left:${item.x/12}%;top:${item.y/7.7}%;width:${item.size/12}%;height:${item.size/7.7}%"><button type="button" class="placed-sticker ${selected?'is-selected':''}" data-placement="${item.id}" aria-label="${sticker.label} sticker. Drag to move. Arrow keys move, plus and minus resize, Delete removes." style="--sticker-color:${sticker.color}"><img src="assets/stickers/sticker-${item.kind}.png" alt="" draggable="false"/><span class="asset-placeholder">${sticker.label}</span></button>${selected?`<button type="button" class="sticker-handle sticker-delete-handle" data-sticker-remove="${item.id}" aria-label="Remove ${sticker.label} sticker">×</button><button type="button" class="sticker-handle sticker-resize-handle" data-sticker-resize="${item.id}" aria-label="Resize ${sticker.label} sticker">↘</button>`:''}</div>`;
+  return `<div class="placed-sticker-group" data-sticker-group="${item.id}" style="left:${item.x/12}%;top:${item.y/7.7}%;width:${item.size/12}%;height:${item.size/7.7}%"><button type="button" class="placed-sticker ${selected?'is-selected':''}" data-placement="${item.id}" aria-label="${sticker.label} sticker. Drag to move. Arrow keys move, plus and minus resize, Delete removes." style="--sticker-color:${sticker.color}"><img src="assets/stickers/sticker-${item.kind}.png" alt="" draggable="false"/><span class="asset-placeholder">${sticker.label}</span></button></div>`;
  }).join('');
  layer.querySelectorAll('.placed-sticker').forEach(button=>{
   button.addEventListener('error',()=>button.classList.add('is-missing'));
@@ -389,12 +397,6 @@ function renderStickerLayer(){
    e.preventDefault();
   };
  });
- layer.querySelectorAll('[data-sticker-resize]').forEach(button=>button.onclick=()=>{
-  const item=state.customization.stickers.find(sticker=>sticker.id===button.dataset.stickerResize);if(item){state.customization.selectedSticker=item.id;resizeSelectedSticker(24);}
- });
- layer.querySelectorAll('[data-sticker-remove]').forEach(button=>button.onclick=()=>{
-  const item=state.customization.stickers.find(sticker=>sticker.id===button.dataset.stickerRemove);if(item){state.customization.selectedSticker=item.id;deleteSelectedSticker();}
- });
 }
 
 async function createSharkCardCanvas({template=false}={}){
@@ -406,8 +408,13 @@ async function createSharkCardCanvas({template=false}={}){
  ctx.imageSmoothingEnabled=false;
  const s=SHARKS[state.result.primary];
  const theme=CARD_CUSTOMIZER_DATA.themes.find(item=>item.id===state.customization.theme)||CARD_CUSTOMIZER_DATA.themes[0];
- const navy=theme.text,border=theme.border,cream='#fbf9ff',blue=theme.tint;
+ const navy=theme.text,cream='#fbf9ff',blue=theme.tint;
  const card={x:70,y:70,w:1060,h:680},footerY=650;
+ let border=theme.border;
+ if(theme.borderEnd){
+  border=ctx.createLinearGradient(0,card.y,0,card.y+card.h);
+  border.addColorStop(0,theme.border);border.addColorStop(1,theme.borderEnd);
+ }
  // Leave the canvas outside the card fully transparent.
  ctx.fillStyle='rgba(19,55,94,.18)';steppedRect(ctx,card.x,card.y+12,card.w,card.h,24);ctx.fill();
  ctx.strokeStyle=border;ctx.lineWidth=20;steppedRect(ctx,card.x+10,card.y+10,card.w-20,card.h-20,22);ctx.stroke();
