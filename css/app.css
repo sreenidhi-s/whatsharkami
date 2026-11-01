@@ -536,6 +536,38 @@
 }
 .sound-toggle:hover{background:var(--mint,#bdf0cf)}
 .sound-toggle:active{transform:translateY(2px)}
+.instagram-widget{
+  position:fixed;right:16px;bottom:16px;z-index:60;
+  --instagram-button-size:52px;width:var(--instagram-button-size);height:var(--instagram-button-size);
+}
+.instagram-link{
+  position:absolute;inset:0;
+  width:52px;height:52px;padding:0;box-sizing:border-box;
+  display:grid;place-items:center;
+  border:0;background:var(--navy,#173d68);color:var(--navy,#173d68);
+  cursor:pointer;text-decoration:none;isolation:isolate;
+  clip-path:polygon(12px 0,calc(100% - 12px) 0,calc(100% - 12px) 3px,calc(100% - 6px) 3px,calc(100% - 6px) 6px,calc(100% - 3px) 6px,calc(100% - 3px) 12px,100% 12px,100% calc(100% - 12px),calc(100% - 3px) calc(100% - 12px),calc(100% - 3px) calc(100% - 6px),calc(100% - 6px) calc(100% - 6px),calc(100% - 6px) calc(100% - 3px),calc(100% - 12px) calc(100% - 3px),calc(100% - 12px) 100%,12px 100%,12px calc(100% - 3px),6px calc(100% - 3px),6px calc(100% - 6px),3px calc(100% - 6px),3px calc(100% - 12px),0 calc(100% - 12px),0 12px,3px 12px,3px 6px,6px 6px,6px 3px,12px 3px);
+}
+.instagram-link::before{content:"";position:absolute;inset:4px;z-index:0;background:var(--cream,#fff2f2);clip-path:inherit;pointer-events:none}
+.instagram-link svg{position:relative;z-index:1}
+.instagram-link:hover::before{background:var(--mint,#bdf0cf)}
+.instagram-link:active{transform:translateY(2px)}
+.instagram-link:focus-visible{outline:3px solid var(--plum,#825c6c);outline-offset:3px}
+.instagram-tooltip{
+  position:absolute;right:0;bottom:calc(100% + 12px);z-index:4;
+  box-sizing:border-box;width:max-content;max-width:calc(100vw - 40px);padding:7px 10px;
+  border:4px solid var(--navy,#173d68);background:var(--cream,#fff2f2);
+  color:var(--navy,#173d68);font:16px var(--font);line-height:1.15;
+  white-space:normal;overflow-wrap:anywhere;box-shadow:4px 4px 0 rgba(19,55,94,.35);
+  opacity:0;visibility:hidden;pointer-events:none;
+}
+.instagram-tooltip::before,.instagram-tooltip::after{
+  content:"";position:absolute;right:calc(var(--instagram-button-size) / 2 - 9px);
+  width:18px;height:12px;clip-path:polygon(0 0,6px 0,6px 4px,12px 4px,12px 0,18px 0,18px 6px,14px 6px,14px 9px,10px 9px,10px 12px,6px 12px,6px 9px,3px 9px,3px 6px,0 6px);
+}
+.instagram-tooltip::before{bottom:-15px;background:var(--navy,#173d68)}
+.instagram-tooltip::after{bottom:-10px;right:calc(var(--instagram-button-size) / 2 - 5px);width:10px;height:9px;background:var(--cream,#fff2f2);clip-path:polygon(0 0,10px 0,10px 5px,7px 5px,7px 9px,3px 9px,3px 5px,0 5px)}
+.instagram-widget:hover .instagram-tooltip{opacity:1;visibility:visible}
 .sound-prompt{position:fixed;left:16px;bottom:80px;z-index:61;width:min(340px,calc(100vw - 32px));box-sizing:border-box;display:grid;grid-template-columns:1fr auto;gap:10px;padding:15px;border:3px solid var(--navy,#173d68);background:var(--cream,#fff2f2);color:var(--navy,#173d68);box-shadow:4px 4px 0 rgba(19,55,94,.3);font:16px var(--font);}
 .sound-prompt[hidden]{display:none}
 .sound-prompt__message{grid-column:1/-1;padding-right:18px;line-height:1.3}
@@ -545,6 +577,7 @@
 .sound-prompt__dismiss{position:absolute;top:4px;right:4px;width:24px;height:24px;padding:0;font-size:17px;line-height:1}
 .sound-prompt button:focus-visible{outline:3px solid var(--plum,#825c6c);outline-offset:2px}
 @media(max-width:760px){.sound-toggle{left:10px;bottom:10px;width:46px;height:46px}}
+@media(max-width:760px){.instagram-widget{right:10px;bottom:10px;--instagram-button-size:46px}.instagram-link{width:46px;height:46px}.instagram-link svg{width:24px;height:24px}}
 @media(max-width:760px){.sound-prompt{left:10px;bottom:66px;width:min(340px,calc(100vw - 20px))}}
 
 

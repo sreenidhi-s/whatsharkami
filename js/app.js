@@ -204,7 +204,7 @@ function restart(){
  render();
 }
 
-async function counterRpc(name,params={}){
+async function counterRpc(name,params={},options={}){
  const cfg=window.SHARK_COUNTER;
  if(!cfg?.url||!cfg?.anonKey)return null;
 
@@ -215,7 +215,8 @@ async function counterRpc(name,params={}){
    Authorization:`Bearer ${cfg.anonKey}`,
    'Content-Type':'application/json'
   },
-  body:JSON.stringify(params)
+  body:JSON.stringify(params),
+  ...options
  });
 
  if(!response.ok)throw new Error('Counter unavailable');
@@ -297,8 +298,8 @@ async function renderCard(){
  if(!state.name){state.name='SHARK FAN';sessionStorage.setItem('sharkName',state.name);}
  app.innerHTML=frame(`<div class="card-customizer-layout"><div class="card-preview-column"><div class="card-id-stage"><div class="card-preview-wrap"><p class="card-preview-loading">PRINTING YOUR SHARK ID...</p></div></div><div class="card-actions" aria-label="Shark ID actions"><button class="card-pill-button" data-action="download" aria-label="Download Shark ID" title="Download Shark ID"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M13 3h6v12h6L16 24 7 15h6zM5 25h22v4H5z"/></svg><span>download</span></button><button class="card-pill-button" data-action="share" aria-label="Share Shark ID" title="Share Shark ID"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M18 2h12v12h-5V9L14 20l-4-4L21 5h-3zM4 9h12v5H9v13h14v-7h5v12H4z"/></svg><span>share</span></button><button class="text-button card-retake" data-action="retake">↻ TAKE THE QUIZ AGAIN</button></div></div>${renderCustomizerPanel()}</div>`,'panel--id');
 
- app.querySelector('[data-action="download"]').onclick=downloadCard;
- app.querySelector('[data-action="share"]').onclick=shareCard;
+ app.querySelector('[data-action="download"]').onclick=()=>{trackCardAction('download');downloadCard();};
+ app.querySelector('[data-action="share"]').onclick=()=>{trackCardAction('share');shareCard();};
  app.querySelector('[data-action="retake"]').onclick=restart;
  bindCustomizerControls();
  await refreshCardPreview(true);
@@ -579,6 +580,13 @@ async function downloadCard(){
   a.click();
   window.setTimeout(()=>URL.revokeObjectURL(a.href),1500);
  });
+}
+
+function trackCardAction(action){
+ counterRpc('record_card_action',{
+  p_event_id:newQuizId(),
+  p_action:action
+ },{keepalive:true}).catch(error=>console.warn(`Could not record Shark ID ${action} analytics.`,error));
 }
 
 function drawCardField(ctx,x,y,width,height,border,fill){

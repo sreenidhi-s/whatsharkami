@@ -24,9 +24,17 @@ Edit the `QUESTIONS` list in `js/questions.js`. Each answer has two shark keys: 
 
 Without setup, the WHAT page uses a local browser counter initialized at 12,847 and keeps working offline. For one shared count across visitors, use a free Supabase project:
 
-1. In Supabase, open **SQL Editor** and run [`counter.sql`](counter.sql). It creates an atomic counter and records a session ID to prevent duplicate counting from one browser session.
+1. In Supabase, open **SQL Editor** and run [`counter.sql`](counter.sql). It creates an atomic quiz counter, prevents duplicate quiz completions per session, and adds an anonymous action log for Shark ID download/share button activations.
 2. Copy the project's **Project URL** and **anon/public key** into `url` and `anonKey` in [`js/counter-config.js`](js/counter-config.js). Do not use a service-role key in a browser file.
-3. Deploy the static site. The counter will read the shared value and refresh every minute; if the backend is unreachable, the local counter remains available.
+3. Deploy the static site. The quiz counter will read the shared value and refresh every minute; if the backend is unreachable, the local counter remains available. Download/share analytics are sent without blocking either button. They count button activations, not confirmed file saves or completed posts.
+
+To view action totals in Supabase SQL Editor, run:
+
+```sql
+select * from public.get_card_action_counts();
+```
+
+The event table stores only a random event UUID, action type, and timestamp. It does not store a name, IP address, or card contents. Repeated button activations count as separate actions; the public client endpoint can be spoofed, so these totals are suitable for basic product analytics rather than fraud-proof reporting.
 
 ## Main files
 
